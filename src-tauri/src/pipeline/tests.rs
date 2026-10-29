@@ -466,3 +466,83 @@ fn enhancement_preserves_highlight_detail() {
     );
     assert!(a < 65535, "the brightest value must not saturate");
 }
+
+// --- Per-region selection (C) -----------------------------------------------
+
+/// With a tile grid, a frame that is sharp in one half and blurred in the
+/// other must score high in the sharp tiles and low in the blurred ones.
+#[test]
+fn tile_scores_locate_sharpness() {
+    use crate::pipeline::quality;
+
+    let (w, h) = (128, 64);
+    let tile = 32;
+    // Left half: fine checkerboard (high local detail). Right half: flat.
+    let mut img = vec![0u16; w * h * 3];
+    for y in 0..h {
+        for x in 0..w {
+            let v: u16 = if x < w / 2 {
+                if (x + y) % 2 == 0 { 60000 } else { 1000 }
+            } else {
+                30000
+            };
+            let i = (y * w + x) * 3;
+            img[i] = v;
+            img[i + 1] = v;
+            img[i + 2] = v;
+        }
+    }
+
+    let s = quality::score_frame(&img, w, h, tile);
+    assert_eq!(s.tiles_x, 4, "128 px / 32 = 4 tiles across");
+    assert_eq!(s.tiles_y, 2, "64 px / 32 = 2 tiles down");
+    assert_eq!(s.tiles.len(), 8);
+
+    // Tiles 0 and 1 (top/bottom of the left half) must beat tiles 2 and 3.
+    let left_top = s.tiles[0];
+    let left_bottom = s.tiles[4]; // row 1, col 0
+    let right_top = s.tiles[2];
+    let right_bottom = s.tiles[6];
+    assert!(
+        left_top > right_top && left_bottom > right_bottom,
+        "detailed tiles must outscore flat ones: {left_top} {left_bottom} vs {right_top} {right_bottom}"
+    );
+}
+
+/// The per-tile gate must let a frame contribute to some tiles and not others.
+/// This is the core of per-region selection: no pixel of a non-admitted tile is
+/// averaged in.
+#[test]
+fn tile_gate_limits_contribution() {
+    use crate::pipeline::stack::{Accumulator, TileGate};
+
+    let (w, h) = (8, 8);
+    // Tile grid of 2x2 tiles of 4x4.
+    let tiles_x = 2;
+    let tile = 4;
+
+    let mut acc = Accumulator::new(w, h);
+    // A uniform frame at 1000.
+    let frame = vec![1000u16; w * h * 3];
+    // Admit only tile 0 (top-left). Others must stay empty.
+    let gate = vec![1u8, 0, 0, 0];
+    acc.add_gated(
+        &frame,
+        None,
+        1.0,
+        1.0,
+        Some(TileGate {
+            gate: &gate,
+            tiles_x,
+            tile,
+        }),
+    );
+    let out = acc.finish();
+
+    // Top-left pixel (0,0) is filled.
+    assert_eq!(out[0], 1000);
+    // Top-right pixel (7,0) belongs to tile 1 (not admitted): stays black.
+    assert_eq!(out[7 * 3], 0, "non-admitted tile must remain empty");
+    // Bottom-left pixel (0,7) belongs to tile 2 (not admitted).
+    assert_eq!(out[(7 * w) * 3], 0, "non-admitted tile must remain empty");
+}

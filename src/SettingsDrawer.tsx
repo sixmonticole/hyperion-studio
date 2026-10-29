@@ -144,6 +144,27 @@ export function SettingsDrawer({
                 onChange={(v) => set("cropSize", Math.round(v))}
               />
             </div>
+            <div className="toggle" style={{ marginTop: 14 }}>
+              <Toggle
+                checked={settings.tileSelect}
+                onChange={(v) => set("tileSelect", v)}
+                label={t("set.tileSelect")}
+                description={t("set.tileSelectDesc")}
+              />
+            </div>
+            {settings.tileSelect && (
+              <div className="sliders" style={{ marginTop: 12 }}>
+                <Slider
+                  label={t("set.tileSize")}
+                  value={settings.tileSize}
+                  min={16}
+                  max={256}
+                  step={16}
+                  format={(v) => `${v} px`}
+                  onChange={(v) => set("tileSize", Math.round(v))}
+                />
+              </div>
+            )}
           </div>
 
           {/* --- Enhancement --- */}

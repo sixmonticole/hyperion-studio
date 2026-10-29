@@ -118,6 +118,9 @@ type Dict = {
   "set.blockNote": string;
   "set.crop": string;
   "set.cropAuto": string;
+  "set.tileSelect": string;
+  "set.tileSelectDesc": string;
+  "set.tileSize": string;
   "set.enhance": string;
   "set.enhanceOn": string;
   "set.enhanceDesc": string;
@@ -278,6 +281,10 @@ const fr: Dict = {
     "Sur une longue session, la Lune tourne : empiler par petits groupes consécutifs évite le flou final.",
   "set.crop": "Taille du crop",
   "set.cropAuto": "auto",
+  "set.tileSelect": "Sélection par zone",
+  "set.tileSelectDesc":
+    "Tire chaque région de l'image des frames qui y sont nettes, au lieu du seul tri global. Meilleur au terminateur et sur le limbe.",
+  "set.tileSize": "Taille des zones",
   "set.enhance": "Amélioration",
   "set.enhanceOn": "Activer le post-traitement",
   "set.enhanceDesc": "Sans effet sur le TIFF brut si désactivé.",
@@ -435,6 +442,10 @@ const en: Dict = {
     "Over a long session the Moon rotates: stacking in small consecutive groups avoids the final blur.",
   "set.crop": "Crop size",
   "set.cropAuto": "auto",
+  "set.tileSelect": "Per-region selection",
+  "set.tileSelectDesc":
+    "Draws each region of the image from the frames that are sharp there, instead of a single global ranking. Better at the terminator and the limb.",
+  "set.tileSize": "Region size",
   "set.enhance": "Enhancement",
   "set.enhanceOn": "Enable post-processing",
   "set.enhanceDesc": "No effect on the raw TIFF when off.",

@@ -131,6 +131,8 @@ export interface Settings {
   apEnabled: boolean;
   derotate: boolean;
   blockSize: number;
+  tileSelect: boolean;
+  tileSize: number;
   orientation: Orientation;
   enhance: EnhanceSettings;
 }
@@ -145,6 +147,8 @@ export const DEFAULT_SETTINGS: Settings = {
   apEnabled: false,
   derotate: false,
   blockSize: 10,
+  tileSelect: true,
+  tileSize: 64,
   orientation: { rotate: 0, flipH: false, flipV: false },
   enhance: {
     enabled: false,

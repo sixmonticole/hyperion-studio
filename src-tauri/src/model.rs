@@ -51,6 +51,20 @@ pub struct FrameInfo {
     pub shift: Option<(f64, f64)>,
     /// Faut-il garder cette frame dans l'empilement ?
     pub keep: bool,
+    /// Score de nettete par tuile (index = ty * tiles_x + tx). Vide tant que
+    /// l'analyse n'a pas tourne, ou si la selection par zone est desactivee.
+    /// Permet de tirer chaque region de l'image des frames nettes *a cet
+    /// endroit*, au lieu du seul score global.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub tile_scores: Vec<f32>,
+    /// Nombre de tuiles en largeur pour `tile_scores`.
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub tiles_x: usize,
+}
+
+/// Petit predicat de serialisation : omet les champs nuls.
+fn is_zero(v: &usize) -> bool {
+    *v == 0
 }
 
 impl FrameInfo {
@@ -62,6 +76,8 @@ impl FrameInfo {
             quality: None,
             shift: None,
             keep: true,
+            tile_scores: Vec::new(),
+            tiles_x: 0,
         }
     }
 }
@@ -165,6 +181,11 @@ pub struct Settings {
     /// images qui ne se superposent plus (resultat flou). Empiler par blocs
     /// courts, puis moyenner les blocs, preserve la nettete.
     pub block_size: usize,
+    /// Selection de frames **par zone** : chaque region de l'image est tiree
+    /// des frames qui y sont nettes, au lieu du seul tri global. Defaut true.
+    pub tile_select: bool,
+    /// Taille d'une tuile de selection (cote, en pixels). Defaut 64.
+    pub tile_size: usize,
     /// Orientation appliquee a l'image finale.
     pub orientation: Orientation,
     /// Post-traitement de l'image finale (ondelettes, niveaux, CLAHE, clarte).
@@ -183,6 +204,8 @@ impl Default for Settings {
             ap_enabled: false,
             derotate: false,
             block_size: 10,
+            tile_select: true,
+            tile_size: 64,
             orientation: Orientation::default(),
             enhance: EnhanceSettings::default(),
         }

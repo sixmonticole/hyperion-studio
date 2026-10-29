@@ -4,6 +4,20 @@
 //! accumule directement dans un buffer f32 (une frame empilee en V1 = crop
 //! carre, donc ~9 Mo pour 1200x1200x3). Voir `pipeline/mod.rs` pour la boucle.
 
+/// Per-tile admission mask for one frame during per-region stacking.
+///
+/// `gate[i] == 1` means "this frame contributes to tile i". It is what lets
+/// each region of the final image be drawn from the frames that are sharp
+/// *there*, rather than from a global keep list.
+pub struct TileGate<'a> {
+    /// One byte per tile, in row-major order (`ty * tiles_x + tx`).
+    pub gate: &'a [u8],
+    /// Number of tiles along x.
+    pub tiles_x: usize,
+    /// Side of a tile, in pixels.
+    pub tile: usize,
+}
+
 /// Accumulateur de stack RGB en f32.
 ///
 /// La somme et le **poids** sont suivis **par pixel** : quand une frame est
@@ -46,33 +60,64 @@ impl Accumulator {
     /// `scale` compense la luminance : chaque frame est ramenee a la meme
     /// brillance moyenne avant addition, ce qui evite les bandes de scintillation.
     pub fn add(&mut self, rgb16: &[u16], valid: Option<&[u8]>, weight: f32, scale: f32) {
+        self.add_gated(rgb16, valid, weight, scale, None)
+    }
+
+    /// Ajoute une frame avec une **porte par tuile** : seuls les pixels des
+    /// tuiles marquees actives contribuent.
+    ///
+    /// C'est le coeur de la selection par zone : une frame jugee nette au
+    /// terminateur mais molle au limbe n'est admise que dans les tuiles du
+    /// terminateur. Aucun pixel n'est moyenné avec du bruit.
+    ///
+    /// `gate` est un masque par tuile (1 = admise). Sa longueur doit valoir
+    /// `tiles_x * tiles_y` ; `tile` est le cote d'une tuile en pixels. Un gate
+    /// `None` equivaut a « toutes les tuiles actives ».
+    pub fn add_gated(
+        &mut self,
+        rgb16: &[u16],
+        valid: Option<&[u8]>,
+        weight: f32,
+        scale: f32,
+        gate: Option<TileGate<'_>>,
+    ) {
         if rgb16.len() != self.sum.len() {
             return;
         }
-        let w = weight.max(0.0);
         if let Some(mask) = valid {
             if mask.len() != self.weight.len() {
                 return;
             }
-            for (i, &m) in mask.iter().enumerate() {
-                if m == 0 {
+        }
+        let w = weight.max(0.0);
+
+        for i in 0..self.weight.len() {
+            // Masque geometrique : pixel hors cadre ignore.
+            if let Some(mask) = valid {
+                if mask[i] == 0 {
                     continue;
                 }
-                let pw = w;
-                self.weight[i] += pw;
-                let base = i * 3;
-                self.sum[base] += rgb16[base] as f32 * scale * pw;
-                self.sum[base + 1] += rgb16[base + 1] as f32 * scale * pw;
-                self.sum[base + 2] += rgb16[base + 2] as f32 * scale * pw;
             }
-        } else {
-            for (i, &v) in rgb16.iter().enumerate() {
-                self.sum[i] += v as f32 * scale * w;
+            // Porte par tuile : pixel d'une tuile non retenue ignore pour
+            // cette frame.
+            if let Some(g) = &gate {
+                let x = i % self.width;
+                let y = i / self.width;
+                let tx = (x / g.tile).min(g.tiles_x.saturating_sub(1));
+                let ty = (y / g.tile).min(g.gate.len() / g.tiles_x.max(1));
+                let ti = (ty * g.tiles_x + tx).min(g.gate.len() - 1);
+                if g.gate[ti] == 0 {
+                    continue;
+                }
             }
-            for pw in self.weight.iter_mut() {
-                *pw += w;
-            }
+
+            self.weight[i] += w;
+            let base = i * 3;
+            self.sum[base] += rgb16[base] as f32 * scale * w;
+            self.sum[base + 1] += rgb16[base + 1] as f32 * scale * w;
+            self.sum[base + 2] += rgb16[base + 2] as f32 * scale * w;
         }
+
         self.weight_sum += w;
         self.count += 1;
     }

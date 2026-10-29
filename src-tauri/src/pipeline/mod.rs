@@ -31,6 +31,36 @@ pub type ProgressFn = dyn Fn(Progress) + Send + Sync;
 /// distinguish a cancellation from a real failure.
 pub const CANCELLED: &str = "__cancelled__";
 
+/// Per-region selection context, shared by the stacking functions.
+///
+/// Holds the tile grid and, for each frame, the mask of tiles it is admitted
+/// into. When `active` is false the whole feature is bypassed and stacking
+/// behaves exactly as before (every kept frame contributes everywhere), so the
+/// global path remains available as a reference.
+struct TileSelect {
+    tiles_x: usize,
+    /// Tile side in pixels.
+    tile: usize,
+    /// Per frame index, the tile gate (1 = the frame contributes to that tile).
+    gates: std::collections::HashMap<usize, Vec<u8>>,
+    active: bool,
+}
+
+impl TileSelect {
+    /// Builds the gate for one frame, or `None` when the frame should
+    /// contribute everywhere (feature off, or frame not gated).
+    fn gate_for(&self, frame_index: usize) -> Option<stack::TileGate<'_>> {
+        if !self.active {
+            return None;
+        }
+        self.gates.get(&frame_index).map(|g| stack::TileGate {
+            gate: g,
+            tiles_x: self.tiles_x,
+            tile: self.tile,
+        })
+    }
+}
+
 /// Returns `Err` if cancellation was requested. Called at loop checkpoints so
 /// a long run stops promptly rather than finishing useless work.
 fn check_cancel(cancel: &AtomicBool) -> Result<()> {
@@ -231,11 +261,16 @@ pub fn run_pipeline(
     });
     let (crop_w, crop_h) = (crop.width, crop.height);
     let n_frames = frames.len();
+    let tile = if settings.tile_select {
+        settings.tile_size.max(8)
+    } else {
+        0
+    };
     let done = Mutex::new(0usize);
     let extra_skipped: Mutex<Vec<SkippedFrame>> = Mutex::new(Vec::new());
-    let scored: Vec<(usize, f64)> = frames
+    let scored: Vec<(usize, quality::FrameScore)> = frames
         .par_iter()
-        .filter_map(|f| -> Option<(usize, f64)> {
+        .filter_map(|f| -> Option<(usize, quality::FrameScore)> {
             if cancel.load(Ordering::Relaxed) {
                 return None;
             }
@@ -249,7 +284,7 @@ pub fn run_pipeline(
             let score = match decode::read_rgb16_tiff(Path::new(&f.cache_path)) {
                 Ok((rgb, w, h)) => {
                     let cropped = crop_rgb16(&rgb, w, h, &crop);
-                    Some(quality::sharpness_score(&cropped, crop_w, crop_h))
+                    Some(quality::score_frame(&cropped, crop_w, crop_h, tile))
                 }
                 Err(_) => {
                     // The cached TIFF became unreadable: skip the frame rather
@@ -298,7 +333,7 @@ pub fn run_pipeline(
     let total = frames.len();
 
     // Normalisation des scores + selection des meilleures frames.
-    let raw_scores: Vec<f64> = scored.iter().map(|(_, s)| *s).collect();
+    let raw_scores: Vec<f64> = scored.iter().map(|(_, s)| s.global).collect();
     let norm = quality::normalize_scores(&raw_scores);
     let score_by_index: std::collections::HashMap<usize, f64> = scored
         .iter()
@@ -306,11 +341,24 @@ pub fn run_pipeline(
         .zip(norm.iter().cloned())
         .collect();
 
-    for f in frames.iter_mut() {
-        f.quality = score_by_index.get(&f.index).cloned();
+    // On conserve aussi les scores par tuile, qui servent a la selection par
+    // zone. Le nombre de tuiles est commun a toutes les frames.
+    let tiles_x = scored.first().map(|(_, s)| s.tiles_x).unwrap_or(1);
+    let tiles_y = scored.first().map(|(_, s)| s.tiles_y).unwrap_or(1);
+    let n_tiles = tiles_x * tiles_y;
+    let mut tile_by_index: std::collections::HashMap<usize, Vec<f32>> =
+        std::collections::HashMap::with_capacity(scored.len());
+    for (i, s) in &scored {
+        tile_by_index.insert(*i, s.tiles.clone());
     }
 
-    // Seuil : on garde les `keep_fraction` meilleures par score normalise.
+    for f in frames.iter_mut() {
+        f.quality = score_by_index.get(&f.index).cloned();
+        f.tiles_x = tiles_x;
+        f.tile_scores = tile_by_index.get(&f.index).cloned().unwrap_or_default();
+    }
+
+    // Seuil global : on garde les `keep_fraction` meilleures par score normalise.
     let mut ordered = norm.clone();
     ordered.sort_by(|a, b| b.partial_cmp(a).unwrap_or(std::cmp::Ordering::Equal));
     let keep_count = ((total as f64 * settings.keep_fraction).ceil() as usize).clamp(1, total);
@@ -318,6 +366,53 @@ pub fn run_pipeline(
 
     for f in frames.iter_mut() {
         f.keep = f.quality.map(|q| q >= threshold).unwrap_or(false);
+    }
+
+    // --- Selection par zone ------------------------------------------------
+    //
+    // Pour chaque tuile, on classe les frames par leur score **sur cette
+    // tuile** et on retient les meilleures. Une frame peut donc etre retenue
+    // au terminateur et ecartee au limbe, et inversement. C'est ce qui permet
+    // de tirer chaque region de l'image des frames nettes a cet endroit.
+    //
+    // On stocke le resultat sous forme de gate par frame : pour chaque frame,
+    // le masque des tuiles ou elle est admise.
+    let mut frame_gates: std::collections::HashMap<usize, Vec<u8>> =
+        std::collections::HashMap::new();
+    let tile_select_active = settings.tile_select && n_tiles > 1 && !scored.is_empty();
+
+    if tile_select_active {
+        // keep_count par tuile, borne par le nombre de frames disponibles.
+        let per_tile_keep = keep_count.min(scored.len()).max(1);
+        // Collecte des scores par tuile.
+        let mut per_tile: Vec<Vec<(usize, f32)>> = vec![Vec::with_capacity(scored.len()); n_tiles];
+        for (idx, s) in &scored {
+            for t in 0..n_tiles.min(s.tiles.len()) {
+                per_tile[t].push((*idx, s.tiles[t]));
+            }
+        }
+
+        for t in 0..n_tiles {
+            let col = &mut per_tile[t];
+            col.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+            // Les tuiles sans signal utilisable (score nul) n'excluent
+            // personne : on prefere empiler toutes les frames plutot que de
+            // laisser un trou.
+            let usable = col.iter().filter(|(_, v)| *v > 0.0).count();
+            if usable < per_tile_keep {
+                // Pas assez de signal sur cette tuile : toutes les frames
+                // admises (elles seront ponderees normalement).
+                continue;
+            }
+            for (rank, (idx, score)) in col.iter().enumerate() {
+                if *score <= 0.0 {
+                    break;
+                }
+                if rank < per_tile_keep {
+                    frame_gates.entry(*idx).or_insert_with(|| vec![0u8; n_tiles])[t] = 1;
+                }
+            }
+        }
     }
 
     let kept: Vec<&FrameInfo> = frames.iter().filter(|f| f.keep).collect();
@@ -374,6 +469,16 @@ pub fn run_pipeline(
         None
     };
 
+    // Per-region selection context: the tile grid and the per-frame gate.
+    // Empty when per-region selection is off (or when there is a single tile),
+    // in which case stacking behaves exactly as before.
+    let tile_ctx = TileSelect {
+        tiles_x,
+        tile: if tile_select_active { tile } else { 0 },
+        gates: frame_gates,
+        active: tile_select_active,
+    };
+
     progress(Progress::Phase {
         phase: Phase::Stacking,
         stage: Stage::Stacking,
@@ -392,6 +497,7 @@ pub fn run_pipeline(
             &crop,
             pixels,
             settings,
+            &tile_ctx,
             progress,
             kept_count,
             settings.block_size,
@@ -400,13 +506,13 @@ pub fn run_pipeline(
     } else if sim_aligner.is_some() {
         // Fallback: similarity alignment over the whole set (experimental).
         stack_global(
-            &kept, &crop, pixels, settings, progress, kept_count, None, sim_aligner.as_ref(),
-            None, cancel,
+            &kept, &crop, pixels, settings, &tile_ctx, progress, kept_count, None,
+            sim_aligner.as_ref(), None, cancel,
         )?
     } else {
         // Fallback: globally aligned stacking (short sessions only).
         stack_global(
-            &kept, &crop, pixels, settings, progress, kept_count, aligner.as_ref(),
+            &kept, &crop, pixels, settings, &tile_ctx, progress, kept_count, aligner.as_ref(),
             sim_aligner.as_ref(), ap_aligner.as_ref(), cancel,
         )?
     };
@@ -493,6 +599,7 @@ fn stack_frame_set(
     crop: &CropRect,
     pixels: usize,
     settings: &Settings,
+    tile_ctx: &TileSelect,
     aligner: Option<&align::Aligner>,
     ap_aligner: Option<&ap::ApAligner>,
 ) -> Result<Vec<u16>> {
@@ -504,7 +611,7 @@ fn stack_frame_set(
         let (rgb, w, h) = decode::read_rgb16_tiff(Path::new(&f.cache_path))?;
         let cropped = crop_rgb16(&rgb, w, h, crop);
 
-        // Alignement (translation) puis AP si demande.
+        // Alignment (translation), then AP when requested.
         let (aligned, valid) = if let Some(al) = aligner {
             let lum = align::luminance(&cropped, pixels);
             let shift = al.estimate(&lum);
@@ -534,8 +641,9 @@ fn stack_frame_set(
             1.0
         };
 
+        let gate = tile_ctx.gate_for(f.index);
         let mut guard = acc_lock.lock().unwrap();
-        guard.add(&aligned, Some(&valid), weight, scale);
+        guard.add_gated(&aligned, Some(&valid), weight, scale, gate);
         Ok(())
     })?;
 
@@ -555,6 +663,7 @@ fn stack_blockwise(
     crop: &CropRect,
     pixels: usize,
     settings: &Settings,
+    tile_ctx: &TileSelect,
     progress: &ProgressFn,
     kept_count: usize,
     block_size: usize,
@@ -604,6 +713,7 @@ fn stack_blockwise(
             crop,
             pixels,
             settings,
+            tile_ctx,
             block_aligner.as_ref(),
             None,
         )?);
@@ -655,6 +765,7 @@ fn stack_global(
     crop: &CropRect,
     pixels: usize,
     settings: &Settings,
+    tile_ctx: &TileSelect,
     progress: &ProgressFn,
     kept_count: usize,
     aligner: Option<&align::Aligner>,
@@ -710,8 +821,9 @@ fn stack_global(
         } else {
             1.0
         };
+        let gate = tile_ctx.gate_for(f.index);
         let mut guard = acc_lock.lock().unwrap();
-        guard.add(&aligned, Some(&valid), weight, scale);
+        guard.add_gated(&aligned, Some(&valid), weight, scale, gate);
 
         let mut d = done.lock().unwrap();
         *d += 1;
