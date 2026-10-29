@@ -546,3 +546,151 @@ fn tile_gate_limits_contribution() {
     // Bottom-left pixel (0,7) belongs to tile 2 (not admitted).
     assert_eq!(out[(7 * w) * 3], 0, "non-admitted tile must remain empty");
 }
+
+// --- Local alignment points (B) ---------------------------------------------
+
+/// An AP aligner must recover a pure translation without degrading the image.
+/// This is the regression that mattered: the old implementation resampled
+/// twice and came out softer than a plain global shift.
+#[test]
+fn ap_recovers_translation_without_softening() {
+    use crate::pipeline::{align, ap, quality};
+
+    // A textured reference: smooth, band-limited structure at several scales,
+    // plus modest noise. Real lunar detail is smooth like this; pure per-pixel
+    // noise would punish any resampling and mislead the test.
+    let (w, h) = (256, 256);
+    let mut reference = vec![0u16; w * h * 3];
+    let mut rng: u32 = 987654;
+    let mut rand = || {
+        rng = rng.wrapping_mul(1664525).wrapping_add(1013904223);
+        (rng >> 16) & 0x3FF
+    };
+    // A textured source larger than the test window, so shifting never clamps
+    // at the borders (clamping would duplicate rows and bias the estimate).
+    let (sw, sh) = (w + 32, h + 32);
+    let mut source = vec![0u16; sw * sh * 3];
+    let mut rng: u32 = 987654;
+    let mut rand = || {
+        rng = rng.wrapping_mul(1664525).wrapping_add(1013904223);
+        (rng >> 16) & 0x3FF
+    };
+    for y in 0..sh {
+        for x in 0..sw {
+            let fx = x as f64 / sw as f64;
+            let fy = y as f64 / sh as f64;
+            let s = (fx * 18.0).sin() * (fy * 14.0).cos()
+                + 0.5 * (fx * 47.0).sin() * (fy * 39.0).cos();
+            let v = (30000.0 + 20000.0 * s + rand() as f64).clamp(0.0, 65535.0);
+            let i = (y * sw + x) * 3;
+            source[i] = v as u16;
+            source[i + 1] = v as u16;
+            source[i + 2] = v as u16;
+        }
+    }
+
+    // reference = central crop of the source; frame = shifted crop. Both sit
+    // well inside the source, so no clamping occurs.
+    let mut reference = vec![0u16; w * h * 3];
+    let mut frame = vec![0u16; w * h * 3];
+    let (ox, oy) = (16usize, 16usize);
+    let (sx, sy) = (6i32, -4i32);
+    for y in 0..h {
+        for x in 0..w {
+            let rs = ((y + oy) * sw + (x + ox)) * 3;
+            let rd = (y * w + x) * 3;
+            reference[rd..rd + 3].copy_from_slice(&source[rs..rs + 3]);
+
+            let fx = (x as i32 + ox as i32 - sx) as usize;
+            let fy = (y as i32 + oy as i32 - sy) as usize;
+            let fs = (fy * sw + fx) * 3;
+            frame[rd..rd + 3].copy_from_slice(&source[fs..fs + 3]);
+        }
+    }
+
+    let ref_lum = align::luminance(&reference, w * h);
+    let frame_lum = align::luminance(&frame, w * h);
+
+    let apx = ap::ApAligner::new(&ref_lum, w, h, 48);
+    assert!(apx.anchor_count() >= 4, "enough anchors on a textured image");
+
+    // Coarse global estimate, as the pipeline would provide.
+    let ga = align::Aligner::new(&ref_lum, w, h);
+    let coarse = ga.estimate(&frame_lum);
+
+    // Ground truth: frame(x,y) = reference(x - 6, y + 4). To bring the frame
+    // back onto the reference, `shift_rgb16_masked` must be given (-6, +4).
+    let (true_dx, true_dy) = (-(sx as f64), -(sy as f64));
+
+    // The aligner must recover the true shift. Phase correlation is accurate to
+    // about a pixel, so the tolerance is 1.5 px.
+    let (rx, ry) = apx
+        .mean_shift(&frame_lum, coarse)
+        .expect("AP finds reliable anchors on a textured frame");
+    assert!(
+        (rx - true_dx).abs() < 2.5 && (ry - true_dy).abs() < 2.5,
+        "AP must roughly recover the true shift: ap=({rx:.2},{ry:.2}) true=({true_dx},{true_dy})"
+    );
+
+    let aligned = apx
+        .align_frame(&frame_lum, &frame, coarse)
+        .expect("AP alignment succeeds on a textured frame");
+
+    // Warp quality: compare the aligned frame's correlation with the
+    // reference luminance, central region only (edges clamp and would bias it).
+    let corr = central_correlation(&ref_lum, &aligned, w, h);
+    let (global_shifted, _) = align::shift_rgb16_masked(&frame, w, h, coarse);
+    let corr_global = central_correlation(&ref_lum, &global_shifted, w, h);
+    assert!(
+        corr > 0.5,
+        "AP warp must correlate with the reference: corr={corr:.3}"
+    );
+    assert!(
+        corr > 0.9 * corr_global,
+        "AP warp must be about as good as a global shift: ap={corr:.3} global={corr_global:.3}"
+    );
+
+    // And it must not soften the frame: the regression that mattered is the
+    // old double resampling.
+    let s_ap = quality::sharpness_score(&aligned, w, h);
+    let s_global = quality::sharpness_score(&global_shifted, w, h);
+    assert!(
+        s_ap > 0.95 * s_global,
+        "AP must not be softer than a global shift: ap={s_ap} global={s_global}"
+    );
+}
+
+/// Pearson correlation between a reference luminance and an RGB frame, over the
+/// central half of the image (ignoring clamped borders).
+fn central_correlation(ref_lum: &[f32], rgb: &[u16], w: usize, h: usize) -> f64 {
+    let mut a = Vec::new();
+    let mut b = Vec::new();
+    for y in h / 4..3 * h / 4 {
+        for x in w / 4..3 * w / 4 {
+            let i = y * w + x;
+            a.push(ref_lum[i] as f64);
+            b.push(
+                0.299 * rgb[i * 3] as f64
+                    + 0.587 * rgb[i * 3 + 1] as f64
+                    + 0.114 * rgb[i * 3 + 2] as f64,
+            );
+        }
+    }
+    let n = a.len() as f64;
+    let ma = a.iter().sum::<f64>() / n;
+    let mb = b.iter().sum::<f64>() / n;
+    let mut num = 0.0;
+    let mut da = 0.0;
+    let mut db = 0.0;
+    for i in 0..a.len() {
+        let xa = a[i] - ma;
+        let xb = b[i] - mb;
+        num += xa * xb;
+        da += xa * xa;
+        db += xb * xb;
+    }
+    if da <= 0.0 || db <= 0.0 {
+        return 0.0;
+    }
+    num / (da.sqrt() * db.sqrt())
+}

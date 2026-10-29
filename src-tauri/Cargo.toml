@@ -112,6 +112,16 @@ name = "analyze_levels"
 path = "src/bin/analyze_levels.rs"
 required-features = ["devtools"]
 
+[[bin]]
+name = "diag_ap"
+path = "src/bin/diag_ap.rs"
+required-features = ["devtools"]
+
+[[bin]]
+name = "diag_ap_real"
+path = "src/bin/diag_ap_real.rs"
+required-features = ["devtools"]
+
 [features]
 devtools = []
 

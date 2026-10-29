@@ -611,20 +611,26 @@ fn stack_frame_set(
         let (rgb, w, h) = decode::read_rgb16_tiff(Path::new(&f.cache_path))?;
         let cropped = crop_rgb16(&rgb, w, h, crop);
 
-        // Alignment (translation), then AP when requested.
-        let (aligned, valid) = if let Some(al) = aligner {
-            let lum = align::luminance(&cropped, pixels);
-            let shift = al.estimate(&lum);
-            let (a, m) = align::shift_rgb16_masked(&cropped, crop_w, crop_h, shift);
-            if let Some(apx) = ap_aligner {
-                let lum2 = align::luminance(&a, pixels);
-                match apx.align_frame(&lum2, &a) {
-                    Some(a2) => (a2, m),
-                    None => (a, m),
+        // Alignment. Two paths, never both:
+        //
+        // - **Global only** (default): one translation, one resampling.
+        // - **Local (AP)**: a coarse global shift centres the local search,
+        //   then the AP field warps the *unaligned* frame **once**. Doing a
+        //   global Catmull-Rom pass and then an AP warp would resample twice
+        //   and soften the result: that was the old bug.
+        let lum = align::luminance(&cropped, pixels);
+        let coarse = aligner.map(|al| al.estimate(&lum)).unwrap_or((0.0, 0.0));
+
+        let (aligned, valid) = if let Some(apx) = ap_aligner {
+            match apx.align_frame(&lum, &cropped, coarse) {
+                Some(a) => (a, vec![1u8; pixels]),
+                None => {
+                    // Too few reliable points: fall back to the global shift.
+                    align::shift_rgb16_masked(&cropped, crop_w, crop_h, coarse)
                 }
-            } else {
-                (a, m)
             }
+        } else if aligner.is_some() {
+            align::shift_rgb16_masked(&cropped, crop_w, crop_h, coarse)
         } else {
             (cropped, vec![1u8; pixels])
         };
@@ -788,26 +794,28 @@ fn stack_global(
         let cropped = crop_rgb16(&rgb, w, h, crop);
         let lum = align::luminance(&cropped, pixels);
 
-        let (globally_aligned, valid): (Vec<u16>, Vec<u8>) = if let Some(sa) = sim_aligner {
+        // Coarse global shift, used both as the fallback and to centre the AP
+        // search.
+        let coarse: (f64, f64) = if let Some(sa) = sim_aligner {
             match sa.estimate(&lum) {
-                Some(t) => similarity::warp_similarity_masked(&cropped, crop_w, crop_h, &t),
-                None => (cropped, vec![1u8; pixels]),
+                Some(t) => (t.tx, t.ty),
+                None => (0.0, 0.0),
             }
         } else if let Some(al) = aligner {
-            let shift = al.estimate(&lum);
-            align::shift_rgb16_masked(&cropped, crop_w, crop_h, shift)
+            al.estimate(&lum)
         } else {
-            (cropped, vec![1u8; pixels])
+            (0.0, 0.0)
         };
 
-        let (aligned, valid) = if let Some(apx) = ap_aligner {
-            let lum2 = align::luminance(&globally_aligned, pixels);
-            match apx.align_frame(&lum2, &globally_aligned) {
-                Some(a) => (a, valid),
-                None => (globally_aligned, valid),
+        // Single warp: AP when available, otherwise global similarity or
+        // translation. Never both (double resampling softens the frame).
+        let (aligned, valid): (Vec<u16>, Vec<u8>) = if let Some(apx) = ap_aligner {
+            match apx.align_frame(&lum, &cropped, coarse) {
+                Some(a) => (a, vec![1u8; pixels]),
+                None => global_warp(&cropped, crop_w, crop_h, sim_aligner, aligner, &lum, coarse),
             }
         } else {
-            (globally_aligned, valid)
+            global_warp(&cropped, crop_w, crop_h, sim_aligner, aligner, &lum, coarse)
         };
 
         let weight = if settings.weighted {
@@ -833,6 +841,31 @@ fn stack_global(
 
     drop(acc_lock);
     Ok(acc.finish())
+}
+
+/// Applies the global alignment warp (similarity if available, else
+/// translation) to a cropped frame. Returns the warped image and its validity
+/// mask. Factored out so the AP fallback and the plain global path share one
+/// implementation.
+fn global_warp(
+    cropped: &[u16],
+    crop_w: usize,
+    crop_h: usize,
+    sim_aligner: Option<&similarity::SimilarityAligner>,
+    aligner: Option<&align::Aligner>,
+    lum: &[f32],
+    coarse: (f64, f64),
+) -> (Vec<u16>, Vec<u8>) {
+    if let Some(sa) = sim_aligner {
+        if let Some(t) = sa.estimate(lum) {
+            return similarity::warp_similarity_masked(cropped, crop_w, crop_h, &t);
+        }
+    }
+    if let Some(al) = aligner {
+        let _ = al; // estimate already done by the caller
+        return align::shift_rgb16_masked(cropped, crop_w, crop_h, coarse);
+    }
+    (cropped.to_vec(), vec![1u8; crop_w * crop_h])
 }
 
 /// Extrait une sous-fenetre RGB 16-bit (crop).

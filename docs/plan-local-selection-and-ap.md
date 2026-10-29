@@ -87,3 +87,38 @@ resamples twice and has no regularised displacement field.
 
 C first, because it reuses everything and is measurable immediately. B is a
 real algorithm project and will reuse C's tile grid to place APs sensibly.
+
+### Outcome of C
+
+Done and merged. `quality::score_frame` scores per tile, frames are ranked per
+tile, and the accumulator gates per tile. New setting `tile_select` (default on)
+and `tile_size` (default 64 px). Tests: tile scores locate sharpness, and the
+gate keeps a non-admitted tile empty.
+
+### Outcome of B (first pass)
+
+The module was rewritten and three real bugs fixed: a missing Hann window on the
+frame patch, a half-patch offset between the reference and frame patches, and a
+reliability test that compared a normalised peak to raw patch energy (rejecting
+every point). After that the shift estimates are excellent: the median matches
+the global shift to a tenth of a pixel.
+
+But the field **warps worse** than a single global translation on real frames
+(+6 to +9% MSE against the reference, and 1-3% softer). Measured on frame 0
+against frames 1, 5 and 30 of the session.
+
+Diagnosis: the per-patch estimate is dominated by jitter, so the field encodes
+noise rather than coherent deformation. Two disproofs ruled out other causes: an
+identical constant shift through both warps produces identical pixels (so the
+resampling is fine), and the border handling was aligned to match.
+
+So B stays off by default. Next concrete steps, in order:
+
+1. **Larger patches** (128 px instead of 64) to raise the estimate's
+   signal-to-noise ratio, then re-measure the same three pairs.
+2. **Regularised fit**: fit a low-order model (translation + rotation + scale,
+   or a smooth spline) to the anchor shifts, so coherent motion is kept and
+   jitter is discarded. Only what the model cannot explain should vary locally.
+3. Re-measure. AP ships only if it beats the global path on MSE *and*
+   sharpness, on the real session.
+
