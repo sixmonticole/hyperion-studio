@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<title>Hyperion Studio — Boutons (3 pistes)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ==========================================================================
+   PLANCHE DE BOUTONS — observatoire
+   Objectif : sortir du « dégradé + halo + reflet » qui sent le générateur.
+   Trois registres : le trait (A), le plein mat (B), le texte (C).
+   ========================================================================== */
+:root{
+  --ink:#0a0d16; --ink-2:#0e121e; --card:#121728; --card-2:#171d31;
+  --line:#232b42; --line-soft:#1a2136;
+  --paper:#ece7dc; --text-2:#b9b4a8; --text-3:#837f74;
+  --gold:#d8a657; --gold-2:#f0cf8a; --gold-dim:rgba(216,166,87,.12); --gold-line:rgba(216,166,87,.4);
+  --ok:#7fc8a0; --err:#e07b7b;
+  --serif:'Spectral',Georgia,serif; --sans:'Inter',system-ui,sans-serif; --mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--ink);color:var(--text-2);font-size:14px;line-height:1.6;
+  -webkit-font-smoothing:antialiased;padding:48px 32px 100px;
+  background-image:radial-gradient(900px 480px at 82% -8%,rgba(216,166,87,.08),transparent 60%),
+                   radial-gradient(760px 460px at 6% 4%,rgba(90,120,200,.08),transparent 58%)}
+.wrap{max-width:1080px;margin:0 auto}
+h1{font-family:var(--serif);font-size:32px;font-weight:600;color:var(--paper);margin-bottom:8px}
+.lead{color:var(--text-3);max-width:660px;margin-bottom:52px;font-size:15px}
+
+.band{margin-bottom:64px}
+.band-head{display:flex;align-items:baseline;gap:14px;margin-bottom:6px;padding-bottom:16px;border-bottom:1px solid var(--line)}
+.band-tag{font-family:var(--mono);font-size:11px;color:var(--gold);letter-spacing:.2em}
+.band h2{font-family:var(--serif);font-size:22px;font-weight:600;color:var(--paper)}
+.band .why{color:var(--text-3);font-size:13px;margin:14px 0 26px;max-width:720px}
+.band .why b{color:var(--paper);font-weight:600}
+
+.showcase{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:32px;margin-bottom:18px}
+.row{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+.row + .row{margin-top:18px}
+.lbl{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--text-3);margin-bottom:14px}
+.note{font-family:var(--mono);font-size:11.5px;color:var(--text-3);line-height:1.7}
+.note b{color:var(--gold-2)}
+
+/* ---------------------------------------------------------------------------
+   A · LE TRAIT — bordure seule, jamais de remplissage plein.
+   Le principal se distingue par l'or et une bordure 2px, pas par un dégradé.
+   --------------------------------------------------------------------------- */
+.a-btn{
+  display:inline-flex;align-items:center;gap:9px;
+  padding:11px 20px;font-family:var(--sans);font-size:13px;font-weight:600;letter-spacing:.01em;
+  background:transparent;color:var(--text-2);border:1px solid var(--line);border-radius:4px;
+  cursor:pointer;transition:color .18s,border-color .18s,background .18s;
+}
+.a-btn svg{width:15px;height:15px}
+.a-btn:hover{color:var(--paper);border-color:var(--text-3)}
+.a-btn--p{color:var(--gold-2);border-color:var(--gold-line);border-width:1px}
+.a-btn--p:hover{background:var(--gold-dim);border-color:var(--gold);color:var(--gold-2)}
+.a-btn--s{color:var(--paper);border-color:var(--text-3);border-color:rgba(185,180,168,.4)}
+.a-btn--s:hover{border-color:var(--paper)}
+.a-btn--d{color:var(--err);border-color:rgba(224,123,123,.35)}
+.a-btn--d:hover{background:rgba(224,123,123,.07)}
+.a-btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* ---------------------------------------------------------------------------
+   B · LE PLEIN MAT — remplissage uni, AUCUNE ombre, AUCUN dégradé.
+   Le relief vient du contraste de la couleur, pas d'un effet.
+   --------------------------------------------------------------------------- */
+.b-btn{
+  display:inline-flex;align-items:center;gap:9px;
+  padding:12px 22px;font-family:var(--sans);font-size:13px;font-weight:600;letter-spacing:.01em;
+  border:none;border-radius:4px;cursor:pointer;transition:filter .18s,opacity .18s;
+}
+.b-btn svg{width:15px;height:15px}
+.b-btn--p{background:var(--gold);color:#1a1204}
+.b-btn--p:hover{background:var(--gold-2)}
+.b-btn--s{background:var(--card-2);color:var(--paper)}
+.b-btn--s:hover{background:#1e2536}
+.b-btn--d{background:rgba(224,123,123,.16);color:var(--err)}
+.b-btn--d:hover{background:rgba(224,123,123,.24)}
+.b-btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* ---------------------------------------------------------------------------
+   C · LE TEXTE — pas de cadre. Juste le mot, une flèche, et un filet animé.
+   --------------------------------------------------------------------------- */
+.c-btn{
+  display:inline-flex;align-items:center;gap:8px;position:relative;
+  padding:10px 2px;font-family:var(--sans);font-size:13px;font-weight:600;letter-spacing:.02em;
+  background:none;border:none;cursor:pointer;color:var(--text-3);transition:color .18s;
+}
+.c-btn svg{width:15px;height:15px}
+.c-btn::after{content:"";position:absolute;left:0;right:0;bottom:4px;height:1px;background:currentColor;
+  transform:scaleX(0);transform-origin:left;transition:transform .22s cubic-bezier(.4,0,.2,1)}
+.c-btn:hover{color:var(--paper)}
+.c-btn:hover::after{transform:scaleX(1)}
+.c-btn--p{color:var(--gold-2)}
+.c-btn--p::after{transform:scaleX(1);background:var(--gold-line)}
+.c-btn--p:hover{color:var(--gold-2)}
+.c-btn--p:hover::after{background:var(--gold)}
+.c-btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* Variante « texte + filet déjà visible » pour le principal de la piste C */
+.c-btn--strong{color:var(--paper)}
+.c-btn--strong::after{transform:scaleX(1);background:var(--gold-line)}
+.c-btn--strong:hover{color:var(--gold-2)}
+
+/* Rangée de spécimen : toutes les tailles et états */
+.sizes{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.sm{padding:8px 14px;font-size:12px}
+.lg{padding:14px 26px;font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Trois façons de faire un bouton</h1>
+  <p class="lead">Le look « fait par IA » vient d'une recette précise : dégradé + halo lumineux + reflet qui balaie + ombre colorée.
+     Voici trois registres qui l'évitent, dans l'esprit de l'Observatoire : encre, or patiné, papier.</p>
+
+  <!-- ================= A · LE TRAIT ================= -->
+  <section class="band">
+    <div class="band-head"><span class="band-tag">PISTE A</span><h2>Le trait</h2></div>
+    <p class="why">Aucun remplissage. Tout repose sur la <b>bordure</b> et la couleur du texte.
+       Le bouton principal se distingue par l'or et un fond très légèrement teinté au survol — jamais par un dégradé.
+       C'est le registre le plus sobre et le plus proche de la plaque gravée de l'observatoire.</p>
+    <div class="showcase">
+      <div class="lbl">États</div>
+      <div class="row">
+        <button class="a-btn a-btn--p"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 4l14 8-14 8V4Z"/></svg>Lancer le traitement</button>
+        <button class="a-btn">Aperçu</button>
+        <button class="a-btn a-btn--s">Ouvrir le dossier</button>
+        <button class="a-btn a-btn--d">Annuler</button>
+        <button class="a-btn" disabled>Traitement…</button>
+      </div>
+      <div class="lbl" style="margin-top:28px">Tailles</div>
+      <div class="sizes">
+        <button class="a-btn a-btn--p sm">Petit</button>
+        <button class="a-btn a-btn--p">Moyen</button>
+        <button class="a-btn a-btn--p lg">Grand</button>
+        <button class="a-btn sm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/></svg>Rafraîchir</button>
+      </div>
+    </div>
+    <p class="note">Survol : la bordure s'éclaircit, le principal prend un <b>fond or à 12 %</b>. Aucune transition d'ombre.</p>
+  </section>
+
+  <!-- ================= B · LE PLEIN MAT ================= -->
+  <section class="band">
+    <div class="band-head"><span class="band-tag">PISTE B</span><h2>Le plein mat</h2></div>
+    <p class="why">Un aplat de couleur, <b>sans aucune ombre ni dégradé</b>. Le relief vient uniquement du contraste :
+       or plein sur encre. C'est franc, direct, très lisible. Le survol éclaircit simplement la teinte.</p>
+    <div class="showcase">
+      <div class="lbl">États</div>
+      <div class="row">
+        <button class="b-btn b-btn--p"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 4l14 8-14 8V4Z"/></svg>Lancer le traitement</button>
+        <button class="b-btn b-btn--s">Aperçu</button>
+        <button class="b-btn b-btn--s">Ouvrir le dossier</button>
+        <button class="b-btn b-btn--d">Annuler</button>
+        <button class="b-btn b-btn--p" disabled>Traitement…</button>
+      </div>
+      <div class="lbl" style="margin-top:28px">Tailles</div>
+      <div class="sizes">
+        <button class="b-btn b-btn--p sm">Petit</button>
+        <button class="b-btn b-btn--p">Moyen</button>
+        <button class="b-btn b-btn--p lg">Grand</button>
+      </div>
+    </div>
+    <p class="note">Le principal est <b>or mat</b>, texte encre. Les secondaires sont <b>carte 2</b>. Zéro ombre portée.</p>
+  </section>
+
+  <!-- ================= C · LE TEXTE ================= -->
+  <section class="band">
+    <div class="band-head"><span class="band-tag">PISTE C</span><h2>Le texte souligné</h2></div>
+    <p class="why">Pas de cadre du tout : le mot, une icône, et un <b>filet qui se tire</b> sous le curseur.
+       C'est le registre éditorial, celui des revues. Très épuré ; à réserver à une interface aérée.</p>
+    <div class="showcase">
+      <div class="lbl">États</div>
+      <div class="row">
+        <button class="c-btn c-btn--strong"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 4l14 8-14 8V4Z"/></svg>Lancer le traitement</button>
+        <button class="c-btn">Aperçu</button>
+        <button class="c-btn">Ouvrir le dossier</button>
+        <button class="c-btn" disabled>Traitement…</button>
+      </div>
+      <div class="lbl" style="margin-top:28px">Tailles</div>
+      <div class="sizes">
+        <button class="c-btn c-btn--strong" style="font-size:12px;padding:6px 2px">Petit</button>
+        <button class="c-btn c-btn--strong">Moyen</button>
+        <button class="c-btn c-btn--strong" style="font-size:15px;padding:12px 2px">Grand</button>
+      </div>
+    </div>
+    <p class="note">Survol : le filet se tire de gauche à droite en ~220 ms. Le principal a son filet <b>déjà tracé</b> en or.</p>
+  </section>
+
+  <!-- ================= PANNEAU DE TEST ================= -->
+  <section class="band">
+    <div class="band-head"><span class="band-tag">EN SITUATION</span><h2>Les trois côte à côte</h2></div>
+    <p class="why">Mêmes boutons que dans l'appli (lancer, aperçu, enregistrer, dossier, annuler), pour comparer d'un regard.</p>
+    <div class="showcase" style="display:grid;gap:30px">
+
+      <div>
+        <div class="lbl">A · Le trait</div>
+        <div class="row">
+          <button class="a-btn a-btn--p">Lancer le traitement</button>
+          <button class="a-btn">Aperçu</button>
+          <button class="a-btn">Enregistrer sous</button>
+          <button class="a-btn a-btn--s">Ouvrir le dossier</button>
+          <button class="a-btn a-btn--d">Annuler</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="lbl">B · Le plein mat</div>
+        <div class="row">
+          <button class="b-btn b-btn--p">Lancer le traitement</button>
+          <button class="b-btn b-btn--s">Aperçu</button>
+          <button class="b-btn b-btn--s">Enregistrer sous</button>
+          <button class="b-btn b-btn--s">Ouvrir le dossier</button>
+          <button class="b-btn b-btn--d">Annuler</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="lbl">C · Le texte souligné</div>
+        <div class="row">
+          <button class="c-btn c-btn--strong">Lancer le traitement</button>
+          <button class="c-btn">Aperçu</button>
+          <button class="c-btn">Enregistrer sous</button>
+          <button class="c-btn">Ouvrir le dossier</button>
+          <button class="c-btn">Annuler</button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================= MÉLANGE ================= -->
+  <section class="band">
+    <div class="band-head"><span class="band-tag">PISTE D — MÉLANGE</span><h2>Le trait principal + texte secondaire</h2></div>
+    <p class="why">Souvent le meilleur compromis : <b>l'action principale est un bouton cadré</b> (on sait où cliquer),
+       et les actions secondaires sont du <b>texte souligné</b> (elles ne parasitent pas). Résultat : un seul bouton dans l'écran, très clair.</p>
+    <div class="showcase">
+      <div class="row" style="align-items:center;gap:26px">
+        <button class="a-btn a-btn--p"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 4l14 8-14 8V4Z"/></svg>Lancer le traitement</button>
+        <span style="width:1px;height:20px;background:var(--line)"></span>
+        <button class="c-btn">Aperçu</button>
+        <button class="c-btn">Enregistrer sous</button>
+        <button class="c-btn">Ouvrir le dossier</button>
+        <button class="c-btn" style="color:var(--err)">Annuler</button>
+      </div>
+    </div>
+    <p class="note">C'est la piste que je recommande pour l'appli : <b>un seul bouton fort par écran</b>, le reste en texte.</p>
+  </section>
+
+</div>
+</body>
+</html>

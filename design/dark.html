@@ -1,0 +1,660 @@
+<!doctype html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<title>Hyperion Studio — Design System (Dark)</title>
+<style>
+/* ==========================================================================
+   HYPERION STUDIO — DESIGN SYSTEM / DARK
+   --------------------------------------------------------------------------
+   Principes :
+   1. Beaucoup de vide, peu de lignes. La lumière guide l'œil.
+   2. Trois niveaux de surface seulement : fond, carte, élément.
+   3. Une seule famille d'accent (cyan → indigo) + le vert pour la réussite.
+   4. Animations courtes (120–260 ms), jamais gratuites.
+   5. Le fond évoque le ciel profond : dégradé + étoiles + halo de planète.
+   ========================================================================== */
+
+/* --- 1. Tokens de couleur ------------------------------------------------ */
+:root {
+  /* Surfaces, du fond vers l'avant */
+  --void:        #05070d;   /* fond absolu de la fenêtre */
+  --bg:          #070a12;   /* fond de page */
+  --surface:     #0e131f;   /* carte */
+  --surface-2:   #131a29;   /* carte surélevée / élément */
+  --surface-3:   #1a2233;   /* survol, champs */
+
+  /* Lignes */
+  --line:         #1b2434;  /* séparateur standard */
+  --line-soft:    #141c2a;  /* séparateur très discret */
+  --line-strong:  #2a3547;  /* bordure au survol */
+
+  /* Texte */
+  --text:       #eef3fd;    /* titres, valeurs */
+  --text-2:     #b6c3da;    /* corps de texte */
+  --text-3:     #7d8ba5;    /* libellés secondaires */
+  --text-4:     #55617a;    /* indications, méta */
+
+  /* Accent : cyan lumineux → indigo */
+  --accent:      #4cc2ff;
+  --accent-2:    #7c6bff;
+  --accent-soft: rgba(76, 194, 255, 0.12);
+  --accent-line: rgba(76, 194, 255, 0.32);
+  --accent-glow: rgba(76, 194, 255, 0.35);
+
+  /* États */
+  --ok:      #3ddc97;
+  --ok-soft: rgba(61, 220, 151, 0.12);
+  --warn:      #ffb457;
+  --warn-soft: rgba(255, 180, 87, 0.12);
+  --err:      #ff6b7a;
+  --err-soft: rgba(255, 107, 122, 0.12);
+
+  /* Formes */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 18px;
+  --r-full: 999px;
+
+  /* Ombres */
+  --shadow-1: 0 1px 2px rgba(0,0,0,.4);
+  --shadow-2: 0 8px 24px rgba(0,0,0,.35);
+  --shadow-3: 0 20px 50px rgba(0,0,0,.5);
+
+  /* Transitions */
+  --t-fast: 120ms cubic-bezier(.4,0,.2,1);
+  --t-base: 200ms cubic-bezier(.4,0,.2,1);
+  --t-slow: 320ms cubic-bezier(.22,1,.36,1);
+
+  color-scheme: dark;
+}
+
+/* --- 2. Base ------------------------------------------------------------- */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "SF Pro Text", system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text-2);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  font-synthesis: none;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Fond « ciel profond » : dégradés radiaux très doux + étoiles fixes.
+   Purement décoratif, fixe au scroll, non cliquable. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background:
+    radial-gradient(1200px 700px at 78% -12%, rgba(124,107,255,.16), transparent 62%),
+    radial-gradient(1000px 620px at 8% 4%,    rgba(76,194,255,.13),  transparent 60%),
+    radial-gradient(900px 900px at 50% 120%,  rgba(61,220,151,.05),  transparent 60%),
+    var(--bg);
+}
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: .5;
+  background-image:
+    radial-gradient(1.2px 1.2px at 22px 34px,  rgba(255,255,255,.55), transparent),
+    radial-gradient(1px 1px   at 118px 82px,  rgba(255,255,255,.4),  transparent),
+    radial-gradient(1.4px 1.4px at 210px 22px, rgba(255,255,255,.32), transparent),
+    radial-gradient(1px 1px   at 320px 130px, rgba(255,255,255,.42), transparent),
+    radial-gradient(1.1px 1.1px at 74px 190px, rgba(255,255,255,.3),  transparent),
+    radial-gradient(1px 1px   at 268px 200px, rgba(255,255,255,.35), transparent);
+  background-size: 380px 260px;
+  animation: drift 220s linear infinite;
+}
+@keyframes drift { to { background-position: 380px 260px; } }
+
+/* --- 3. Mise en page ------------------------------------------------------ */
+.wrap { max-width: 1160px; margin: 0 auto; padding: 40px 28px 100px; }
+
+.doc-head { margin-bottom: 56px; }
+.doc-head h1 {
+  font-size: 30px; font-weight: 650; letter-spacing: -.03em;
+  color: var(--text); margin-bottom: 6px;
+}
+.doc-head p { color: var(--text-3); max-width: 640px; }
+
+.section { margin-bottom: 64px; scroll-margin-top: 24px; }
+.section > h2 {
+  font-size: 12px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .14em; color: var(--text-4);
+  padding-bottom: 12px; margin-bottom: 24px;
+  border-bottom: 1px solid var(--line-soft);
+  display: flex; align-items: center; gap: 10px;
+}
+.section > h2::before {
+  content: ""; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent); box-shadow: 0 0 10px var(--accent-glow);
+}
+
+.grid { display: grid; gap: 20px; }
+.grid.c2 { grid-template-columns: repeat(2, minmax(0,1fr)); }
+.grid.c3 { grid-template-columns: repeat(3, minmax(0,1fr)); }
+.grid.c4 { grid-template-columns: repeat(4, minmax(0,1fr)); }
+@media (max-width: 860px) { .grid.c2, .grid.c3, .grid.c4 { grid-template-columns: 1fr; } }
+
+.row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.stack { display: flex; flex-direction: column; gap: 16px; }
+
+.label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: .1em;
+  color: var(--text-4); margin-bottom: 12px; font-weight: 600;
+}
+
+/* --- 4. Carte ------------------------------------------------------------- */
+.card {
+  background: linear-gradient(180deg, var(--surface), color-mix(in srgb, var(--surface) 92%, #000));
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 22px;
+  box-shadow: var(--shadow-2);
+  transition: border-color var(--t-base), transform var(--t-base), box-shadow var(--t-base);
+}
+.card.interactive { cursor: pointer; }
+.card.interactive:hover {
+  border-color: var(--line-strong);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-3);
+}
+.card-title { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.card-sub { font-size: 13px; color: var(--text-3); }
+
+/* --- 5. Palette ----------------------------------------------------------- */
+.swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px,1fr)); gap: 12px; }
+.swatch { border-radius: var(--r-md); overflow: hidden; border: 1px solid var(--line); }
+.swatch .chip { height: 62px; }
+.swatch .meta { padding: 10px 12px; background: var(--surface); }
+.swatch .meta b { display: block; font-size: 12.5px; color: var(--text); font-weight: 600; }
+.swatch .meta span { font-size: 11px; color: var(--text-4); font-family: ui-monospace, monospace; }
+
+/* --- 6. Typographie ------------------------------------------------------- */
+.type-row { display: flex; align-items: baseline; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--line-soft); }
+.type-row .tag { font-size: 11px; color: var(--text-4); font-family: ui-monospace, monospace; min-width: 130px; }
+.t-display { font-size: 34px; font-weight: 650; letter-spacing: -.03em; color: var(--text); line-height: 1.15; }
+.t-h1 { font-size: 26px; font-weight: 640; letter-spacing: -.02em; color: var(--text); }
+.t-h2 { font-size: 19px; font-weight: 620; letter-spacing: -.01em; color: var(--text); }
+.t-body { font-size: 14px; color: var(--text-2); }
+.t-small { font-size: 12.5px; color: var(--text-3); }
+.mono { font-family: ui-monospace, "SF Mono", monospace; font-size: 12.5px; color: var(--text-3); }
+
+/* --- 7. Boutons ----------------------------------------------------------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  border: 1px solid transparent; border-radius: var(--r-md);
+  padding: 11px 18px; font-size: 13.5px; font-weight: 600; font-family: inherit;
+  cursor: pointer; white-space: nowrap; position: relative; overflow: hidden;
+  transition: transform var(--t-fast), background var(--t-base), border-color var(--t-base), box-shadow var(--t-base), color var(--t-base);
+}
+.btn:active { transform: scale(.975); }
+.btn svg { width: 15px; height: 15px; }
+
+.btn-primary {
+  color: #04121d;
+  background: linear-gradient(100deg, var(--accent), var(--accent-2));
+  box-shadow: 0 6px 20px rgba(76,194,255,.28);
+}
+.btn-primary:hover { box-shadow: 0 10px 28px rgba(76,194,255,.42); }
+/* reflet qui balaie au survol */
+.btn-primary::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(100deg, transparent 30%, rgba(255,255,255,.4), transparent 70%);
+  transform: translateX(-120%); transition: transform var(--t-slow);
+}
+.btn-primary:hover::after { transform: translateX(120%); }
+
+.btn-secondary {
+  color: var(--text); background: var(--surface-2);
+  border-color: var(--line); box-shadow: var(--shadow-1);
+}
+.btn-secondary:hover { background: var(--surface-3); border-color: var(--line-strong); }
+
+.btn-ghost { color: var(--text-3); background: transparent; border-color: var(--line); }
+.btn-ghost:hover { color: var(--text); border-color: var(--line-strong); background: var(--surface-2); }
+
+.btn-danger { color: var(--err); background: var(--err-soft); border-color: rgba(255,107,122,.3); }
+.btn-danger:hover { background: rgba(255,107,122,.18); }
+
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn-sm { padding: 8px 13px; font-size: 12.5px; border-radius: var(--r-sm); }
+.btn-icon { padding: 10px; width: 38px; height: 38px; }
+
+/* --- 8. Badges & puces ---------------------------------------------------- */
+.badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 11px; border-radius: var(--r-full);
+  font-size: 12px; font-weight: 500;
+  background: var(--surface-2); border: 1px solid var(--line); color: var(--text-3);
+}
+.badge svg { width: 12px; height: 12px; }
+.badge-ok   { color: var(--ok);   background: var(--ok-soft);   border-color: rgba(61,220,151,.3); }
+.badge-warn { color: var(--warn); background: var(--warn-soft); border-color: rgba(255,180,87,.3); }
+.badge-info { color: var(--accent); background: var(--accent-soft); border-color: var(--accent-line); }
+
+.chip {
+  padding: 8px 14px; border-radius: var(--r-full); font-size: 12.5px; font-weight: 500;
+  background: var(--surface-2); border: 1px solid var(--line); color: var(--text-3);
+  cursor: pointer; display: inline-flex; align-items: center; gap: 7px;
+  transition: all var(--t-base);
+}
+.chip svg { width: 13px; height: 13px; }
+.chip:hover { color: var(--text); border-color: var(--line-strong); }
+.chip.on {
+  color: var(--accent); background: var(--accent-soft); border-color: var(--accent-line);
+  box-shadow: 0 0 0 3px rgba(76,194,255,.07);
+}
+
+/* --- 9. Curseur ----------------------------------------------------------- */
+.slider { display: flex; flex-direction: column; gap: 10px; }
+.slider-head { display: flex; justify-content: space-between; align-items: baseline; }
+.slider-head span { font-size: 13px; color: var(--text-2); }
+.slider-head output {
+  font-size: 12.5px; font-weight: 650; color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  padding: 2px 9px; border-radius: var(--r-sm);
+  background: var(--accent-soft); border: 1px solid var(--accent-line);
+}
+input[type="range"] {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; height: 4px; border-radius: var(--r-full); outline: none; cursor: pointer;
+  background: linear-gradient(90deg,
+    var(--accent) 0%, var(--accent-2) var(--pct, 40%),
+    var(--surface-3) var(--pct, 40%), var(--surface-3) 100%);
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%;
+  background: #fff; border: 3px solid var(--accent);
+  box-shadow: 0 0 0 0 var(--accent-glow);
+  transition: box-shadow var(--t-base), transform var(--t-fast);
+}
+input[type="range"]::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 0 7px rgba(76,194,255,.18); transform: scale(1.08);
+}
+
+/* --- 10. Interrupteur ----------------------------------------------------- */
+.switch { position: relative; width: 42px; height: 24px; border-radius: var(--r-full);
+  background: var(--surface-3); border: 1px solid var(--line); cursor: pointer;
+  transition: background var(--t-base), border-color var(--t-base); flex-shrink: 0; }
+.switch::after {
+  content: ""; position: absolute; top: 2px; left: 2px;
+  width: 18px; height: 18px; border-radius: 50%; background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,.5);
+  transition: transform var(--t-slow);
+}
+.switch.on { background: linear-gradient(100deg, var(--accent), var(--accent-2)); border-color: transparent; }
+.switch.on::after { transform: translateX(18px); }
+
+.toggle-row { display: flex; align-items: flex-start; gap: 13px; }
+.toggle-text { display: flex; flex-direction: column; gap: 2px; }
+.toggle-text b { font-size: 13.5px; color: var(--text); font-weight: 550; }
+.toggle-text span { font-size: 12px; color: var(--text-4); }
+
+/* --- 11. Progression ------------------------------------------------------ */
+.progress { height: 6px; border-radius: var(--r-full); background: var(--surface-3); overflow: hidden; border: 1px solid var(--line-soft); }
+.progress .fill {
+  height: 100%; border-radius: var(--r-full);
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  position: relative; transition: width var(--t-slow);
+}
+.progress .fill::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.45), transparent);
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+@keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+.progress.done .fill { background: linear-gradient(90deg, var(--ok), #6ce8b0); }
+.progress.done .fill::after { display: none; }
+
+/* Filet lumineux indéterminé (chargement) */
+.progress.indeterminate .fill {
+  width: 34% !important; animation: slide 1.4s cubic-bezier(.4,0,.2,1) infinite;
+}
+@keyframes slide { 0% { margin-left: -34%; } 100% { margin-left: 100%; } }
+
+/* --- 12. Étapes ----------------------------------------------------------- */
+.steps { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.step {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 12px; border-radius: var(--r-md); font-size: 12.5px;
+  color: var(--text-4); background: var(--surface); border: 1px solid var(--line-soft);
+  transition: all var(--t-base);
+}
+.step .dot { width: 16px; height: 16px; border-radius: 50%; display: grid; place-items: center;
+  border: 1.5px solid currentColor; flex-shrink: 0; }
+.step .dot svg { width: 9px; height: 9px; }
+.step.active { color: var(--accent); border-color: var(--accent-line); background: var(--accent-soft); }
+.step.active .dot { animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(76,194,255,.5); } 50% { box-shadow: 0 0 0 5px rgba(76,194,255,0); } }
+.step.done { color: var(--ok); border-color: rgba(61,220,151,.28); }
+.step.done .dot { background: var(--ok-soft); }
+
+/* --- 13. Champ de saisie -------------------------------------------------- */
+.field {
+  width: 100%; padding: 11px 14px; border-radius: var(--r-md);
+  background: var(--surface-3); border: 1px solid var(--line);
+  color: var(--text); font-size: 13.5px; font-family: inherit;
+  transition: border-color var(--t-base), box-shadow var(--t-base);
+}
+.field::placeholder { color: var(--text-4); }
+.field:focus { outline: none; border-color: var(--accent-line); box-shadow: 0 0 0 3px rgba(76,194,255,.12); }
+
+/* --- 14. Zone de dépôt ---------------------------------------------------- */
+.drop {
+  display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px;
+  padding: 44px 24px; border-radius: var(--r-lg); cursor: pointer;
+  border: 1.5px dashed var(--line-strong); background: var(--surface);
+  transition: all var(--t-base);
+}
+.drop:hover { border-color: var(--accent-line); background: linear-gradient(180deg, var(--accent-soft), var(--surface)); }
+.drop svg { width: 30px; height: 30px; color: var(--accent); margin-bottom: 8px; }
+.drop h3 { font-size: 16px; color: var(--text); font-weight: 600; }
+.drop p { font-size: 13px; color: var(--text-4); }
+
+/* --- 15. Statistique ------------------------------------------------------ */
+.stat { display: flex; flex-direction: column; gap: 3px; }
+.stat b { font-size: 27px; font-weight: 680; letter-spacing: -.03em; color: var(--text);
+  font-variant-numeric: tabular-nums; line-height: 1.1; }
+.stat b em { font-size: 15px; color: var(--text-4); font-style: normal; font-weight: 500; }
+.stat span { font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--text-4); }
+
+/* --- 16. Aperçu image ----------------------------------------------------- */
+.frame {
+  border-radius: var(--r-lg); overflow: hidden; border: 1px solid var(--line);
+  background: #000; position: relative;
+}
+.frame img { display: block; width: 100%; }
+.frame .hint {
+  position: absolute; left: 10px; bottom: 10px;
+  padding: 5px 10px; border-radius: var(--r-full); font-size: 11.5px;
+  background: rgba(5,7,13,.75); border: 1px solid var(--line); color: var(--text-2);
+  backdrop-filter: blur(8px);
+}
+
+/* Squelette de chargement (shimmer) */
+.skeleton {
+  border-radius: var(--r-md); height: 14px;
+  background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 37%, var(--surface-2) 63%);
+  background-size: 400% 100%; animation: sk 1.4s ease infinite;
+}
+@keyframes sk { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
+
+/* --- 17. Logo ------------------------------------------------------------- */
+.logo { display: inline-flex; align-items: center; gap: 13px; }
+.logo-mark {
+  width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center;
+  background: radial-gradient(circle at 32% 28%, rgba(76,194,255,.4), rgba(124,107,255,.25) 60%, transparent);
+  border: 1px solid var(--accent-line);
+  box-shadow: 0 0 26px rgba(76,194,255,.2), inset 0 0 18px rgba(76,194,255,.1);
+  color: #cfe9ff; position: relative; overflow: hidden;
+}
+.logo-mark svg { width: 24px; height: 24px; }
+.logo-mark::after {
+  content: ""; position: absolute; width: 200%; height: 200%;
+  background: conic-gradient(from 0deg, transparent, rgba(76,194,255,.35), transparent 40%);
+  animation: orbit 6s linear infinite;
+}
+@keyframes orbit { to { transform: rotate(360deg); } }
+.logo-text b { display: block; font-size: 17px; font-weight: 650; letter-spacing: -.02em; color: var(--text); }
+.logo-text span { font-size: 11.5px; color: var(--text-4); letter-spacing: .02em; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="doc-head">
+    <div class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+          <circle cx="12" cy="12" r="4.2"/>
+          <ellipse cx="12" cy="12" rx="10" ry="3.6" transform="rotate(-22 12 12)"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <b>Hyperion Studio</b>
+        <span>Design System · Dark</span>
+      </div>
+    </div>
+    <h1 style="margin-top:28px">Le ciel profond comme toile de fond</h1>
+    <p>Fond presque noir rehaussé d'un dégradé d'étoiles et de halos de planète. Une seule famille
+       d'accent (cyan → indigo), beaucoup de vide, animations courtes. Ce thème est celui du travail
+       de nuit : il préserve la perception des faibles luminosités sur les images astro.</p>
+  </header>
+
+  <!-- 1. Palette -->
+  <section class="section">
+    <h2>Palette</h2>
+    <div class="label">Surfaces</div>
+    <div class="swatches" style="margin-bottom:24px">
+      <div class="swatch"><div class="chip" style="background:#05070d"></div><div class="meta"><b>Void</b><span>#05070D</span></div></div>
+      <div class="swatch"><div class="chip" style="background:#070a12"></div><div class="meta"><b>Background</b><span>#070A12</span></div></div>
+      <div class="swatch"><div class="chip" style="background:#0e131f"></div><div class="meta"><b>Surface</b><span>#0E131F</span></div></div>
+      <div class="swatch"><div class="chip" style="background:#131a29"></div><div class="meta"><b>Surface 2</b><span>#131A29</span></div></div>
+      <div class="swatch"><div class="chip" style="background:#1a2233"></div><div class="meta"><b>Surface 3</b><span>#1A2233</span></div></div>
+    </div>
+
+    <div class="label">Accent & états</div>
+    <div class="swatches">
+      <div class="swatch"><div class="chip" style="background:linear-gradient(100deg,#4cc2ff,#7c6bff)"></div><div class="meta"><b>Accent</b><span>#4CC2FF → #7C6BFF</span></div></div>
+      <div class="swatch"><div class="chip" style="background:#3ddc97"></div><div class="meta"><b>Succès</b><span>#3DDC97</span></div></div>
+      <div class="swatch"><div class="chip" style="background:#ffb457"></div><div class="meta"><b>Attention</b><span>#FFB457</span></div></div>
+      <div class="swatch"><div class="chip" style="background:#ff6b7a"></div><div class="meta"><b>Erreur</b><span>#FF6B7A</span></div></div>
+      <div class="swatch"><div class="chip" style="background:#eef3fd"></div><div class="meta"><b>Texte</b><span>#EEF3FD</span></div></div>
+    </div>
+  </section>
+
+  <!-- 2. Typographie -->
+  <section class="section">
+    <h2>Typographie</h2>
+    <div class="type-row"><span class="tag">Display / 650</span><span class="t-display">Empiler 200 poses</span></div>
+    <div class="type-row"><span class="tag">Titre / 640</span><span class="t-h1">Hyperion Studio</span></div>
+    <div class="type-row"><span class="tag">Sous-titre / 620</span><span class="t-h2">Résultat du stack</span></div>
+    <div class="type-row"><span class="tag">Corps / 400</span><span class="t-body">Détection, crop, tri, alignement et empilement par blocs, entièrement automatiques.</span></div>
+    <div class="type-row"><span class="tag">Secondaire / 400</span><span class="t-small">Le crop conserve toujours l'objet entier, avec une marge de noir.</span></div>
+    <div class="type-row" style="border:none"><span class="tag">Mono / 400</span><span class="mono">/Users/simon/Documents/Photo/lune 25 oct</span></div>
+    <p style="margin-top:16px;color:var(--text-4);font-size:12.5px">Police système (SF Pro sur macOS, Inter en secours). Rien de téléchargé : chargement instantané, rendu natif.</p>
+  </section>
+
+  <!-- 3. Boutons -->
+  <section class="section">
+    <h2>Boutons</h2>
+    <div class="stack">
+      <div>
+        <div class="label">Variantes</div>
+        <div class="row">
+          <button class="btn btn-primary">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 4l14 8-14 8V4Z"/></svg>
+            Lancer le traitement
+          </button>
+          <button class="btn btn-secondary">Aperçu</button>
+          <button class="btn btn-ghost">Avancé</button>
+          <button class="btn btn-danger">Annuler</button>
+          <button class="btn btn-secondary" disabled>Traitement…</button>
+        </div>
+      </div>
+      <div>
+        <div class="label">Tailles & icône seule</div>
+        <div class="row">
+          <button class="btn btn-primary btn-sm">Petit</button>
+          <button class="btn btn-secondary btn-sm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/></svg>
+            Rafraîchir
+          </button>
+          <button class="btn btn-ghost btn-icon" title="Réglages">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. Badges & puces -->
+  <section class="section">
+    <h2>Badges & puces</h2>
+    <div class="stack">
+      <div class="row">
+        <span class="badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/></svg>
+          ILCE-6000
+        </span>
+        <span class="badge">4024 × 4024</span>
+        <span class="badge badge-ok">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>
+          objet détecté
+        </span>
+        <span class="badge badge-info">cache prêt</span>
+        <span class="badge badge-warn">objet non détecté</span>
+      </div>
+      <div class="row">
+        <button class="chip on">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-3-6.7M21 3v6h-6"/></svg>
+          90°
+        </button>
+        <button class="chip">Miroir H</button>
+        <button class="chip">Miroir V</button>
+        <button class="chip on">Ondelettes</button>
+        <button class="chip">Brut</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. Formulaires -->
+  <section class="section">
+    <h2>Curseurs & interrupteurs</h2>
+    <div class="grid c2">
+      <div class="card">
+        <div class="sliders" style="display:flex;flex-direction:column;gap:22px">
+          <label class="slider">
+            <div class="slider-head"><span>Netteté (ondelettes)</span><output>1.40</output></div>
+            <input type="range" min="0" max="3" step="0.05" value="1.4" style="--pct:47%">
+          </label>
+          <label class="slider">
+            <div class="slider-head"><span>Échelles d'ondelettes</span><output>4</output></div>
+            <input type="range" min="1" max="6" step="1" value="4" style="--pct:60%">
+          </label>
+          <label class="slider">
+            <div class="slider-head"><span>Frames conservées</span><output>25 %</output></div>
+            <input type="range" min="1" max="100" step="1" value="25" style="--pct:25%">
+          </label>
+        </div>
+      </div>
+      <div class="card">
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div class="toggle-row">
+            <span class="switch on"></span>
+            <div class="toggle-text"><b>Aligner les frames</b><span>Corrige la dérive et la rotation de champ.</span></div>
+          </div>
+          <div class="toggle-row">
+            <span class="switch on"></span>
+            <div class="toggle-text"><b>Pondérer par la qualité</b><span>Donne plus de poids aux poses nettes.</span></div>
+          </div>
+          <div class="toggle-row">
+            <span class="switch"></span>
+            <div class="toggle-text"><b>Points d'alignement locaux</b><span>Expérimental — dégrade l'image.</span></div>
+          </div>
+          <div>
+            <div class="label" style="margin:0 0 8px">Nom de sortie</div>
+            <input class="field" placeholder="lune_stack" value="lune_stack">
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. Étapes & progression -->
+  <section class="section">
+    <h2>Étapes & progression</h2>
+    <div class="card stack">
+      <div class="steps">
+        <div class="step done"><span class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg></span>Import RAW</div>
+        <div class="step done"><span class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg></span>Analyse</div>
+        <div class="step active"><span class="dot"></span>Empilement</div>
+        <div class="step"><span class="dot"></span>Post-traitement</div>
+        <div class="step"><span class="dot"></span>Export TIFF</div>
+      </div>
+      <div class="progress"><div class="fill" style="width:58%"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:12.5px">
+        <span style="color:var(--text-2)">Empilement des blocs — 116/200</span>
+        <span class="mono">2 min 14 s · ~1 min 42 s restant</span>
+      </div>
+      <div class="progress done"><div class="fill" style="width:100%"></div></div>
+      <div class="progress indeterminate"><div class="fill"></div></div>
+    </div>
+  </section>
+
+  <!-- 7. Cartes & zone de dépôt -->
+  <section class="section">
+    <h2>Cartes & zone de dépôt</h2>
+    <div class="grid c2">
+      <div class="card interactive">
+        <div class="card-title">Dossier sélectionné</div>
+        <div class="card-sub mono">/Users/simon/Documents/Photo/lune 25 oct</div>
+        <div class="row" style="margin-top:14px">
+          <span class="badge badge-ok">428 images</span>
+          <span class="badge badge-info">cache prêt</span>
+        </div>
+      </div>
+      <div class="drop">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg>
+        <h3>Choisir un dossier d'images</h3>
+        <p>RAW (ARW, NEF, CR2…) ou TIFF 16 bits déjà convertis</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8. Résultat -->
+  <section class="section">
+    <h2>Résultat & aperçu</h2>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap">
+        <div>
+          <div class="card-title" style="color:var(--ok);display:flex;align-items:center;gap:8px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="width:18px;height:18px"><path d="M20 6 9 17l-5-5"/></svg>
+            Stack terminé
+          </div>
+          <div class="card-sub mono" style="margin-top:4px">…/lune 25 oct/hyperion_out/lune 25 oct_stack.tif</div>
+        </div>
+        <div class="row">
+          <button class="btn btn-ghost btn-sm">Aperçu</button>
+          <button class="btn btn-ghost btn-sm">Enregistrer sous</button>
+          <button class="btn btn-secondary btn-sm">Ouvrir le dossier</button>
+        </div>
+      </div>
+      <div class="row" style="gap:40px;margin:24px 0 20px">
+        <div class="stat"><b>200<em>/200</em></b><span>frames empilées</span></div>
+        <div class="stat"><b>26</b><span>qualité moyenne</span></div>
+        <div class="stat"><b>3620<em>²</em></b><span>taille du crop</span></div>
+      </div>
+      <div class="frame">
+        <img alt="Aperçu du stack" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='420'><defs><radialGradient id='s' cx='50%25' cy='50%25'><stop offset='0%25' stop-color='%230a1020'/><stop offset='100%25' stop-color='%23050710'/></radialGradient><radialGradient id='m' cx='45%25' cy='40%25'><stop offset='0%25' stop-color='%23d8dde8'/><stop offset='65%25' stop-color='%239aa3b5'/><stop offset='100%25' stop-color='%23545c6e'/></radialGradient></defs><rect width='800' height='420' fill='url(%23s)'/><circle cx='400' cy='210' r='150' fill='url(%23m)'/><circle cx='360' cy='180' r='26' fill='%23b9c0cd' opacity='.55'/><circle cx='452' cy='238' r='17' fill='%23aeb6c4' opacity='.5'/><circle cx='400' cy='120' r='12' fill='%23c6ccd8' opacity='.45'/><circle cx='330' cy='270' r='9' fill='%23b3bac8' opacity='.4'/><g fill='%23ffffff'><circle cx='90' cy='60' r='1.3' opacity='.8'/><circle cx='700' cy='90' r='1.1' opacity='.6'/><circle cx='150' cy='340' r='1' opacity='.5'/><circle cx='660' cy='350' r='1.4' opacity='.7'/><circle cx='250' cy='40' r='1' opacity='.45'/></g></svg>">
+        <span class="hint">Cliquez pour inspecter à 100 %</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9. Chargement -->
+  <section class="section" style="margin-bottom:0">
+    <h2>Chargement</h2>
+    <div class="card stack" style="max-width:420px">
+      <div class="skeleton" style="width:60%"></div>
+      <div class="skeleton" style="width:90%"></div>
+      <div class="skeleton" style="width:75%"></div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

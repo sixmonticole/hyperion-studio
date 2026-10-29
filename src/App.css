@@ -1,0 +1,1612 @@
+/* ============================================================================
+   HYPERION STUDIO — Design System « Observatoire »
+   ----------------------------------------------------------------------------
+   Deux thèmes, une seule architecture de tokens. Le thème est porté par
+   l'attribut `data-theme` sur <html> (« dark » par défaut, « light » en clair).
+   Les composants n'utilisent que les variables : rien n'est codé en dur.
+
+   Univers : le chic scientifique, l'archive, la coupole. Serif d'affichage
+   (Spectral), sans-serif fonctionnel (Inter), monospace pour les données
+   (JetBrains Mono). Or patiné comme unique accent.
+   ========================================================================== */
+
+/* --- Polices --------------------------------------------------------------
+   Chargées depuis Google Fonts. En l'absence de réseau, les piles de secours
+   (Georgia / system-ui / ui-monospace) prennent le relais sans casser la mise
+   en page. */
+@import url("https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
+
+/* ============================================================================
+   1. TOKENS — THÈME SOMBRE (par défaut)
+   ========================================================================== */
+:root,
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Surfaces, du fond vers l'avant */
+  --ink:      #0a0d16;
+  --ink-2:    #0e121e;
+  --card:     #121728;
+  --card-2:   #171d31;
+  --card-3:   #1e2536;
+
+  /* Lignes */
+  --line:      #232b42;
+  --line-soft: #1a2136;
+  --line-hard: #33405c;
+
+  /* Texte */
+  --paper:  #ece7dc;
+  --text:   #ece7dc;
+  --text-2: #b9b4a8;
+  --text-3: #837f74;
+  --text-4: #605c53;
+
+  /* Or & signaux */
+  --gold:       #d8a657;
+  --gold-2:     #f0cf8a;
+  --gold-dim:   rgba(216, 166, 87, 0.12);
+  --gold-line:  rgba(216, 166, 87, 0.4);
+  --gold-glow:  rgba(216, 166, 87, 0.28);
+
+  --ok:        #7fc8a0;
+  --ok-dim:    rgba(127, 200, 160, 0.12);
+  --ok-line:   rgba(127, 200, 160, 0.34);
+  --warn:      #e8b567;
+  --warn-dim:  rgba(232, 181, 103, 0.12);
+  --warn-line: rgba(232, 181, 103, 0.34);
+  --err:       #e07b7b;
+  --err-dim:   rgba(224, 123, 123, 0.12);
+  --err-line:  rgba(224, 123, 123, 0.34);
+
+  /* Fond décoratif (lavis + halo de coupole) */
+  --bg-lavis: radial-gradient(900px 500px at 84% -8%, rgba(216, 166, 87, 0.10), transparent 60%),
+              radial-gradient(820px 480px at 6% 4%,   rgba(90, 120, 200, 0.10), transparent 58%);
+  --bg-grad:  linear-gradient(180deg, #0b0f1a, #070a12);
+  --dome-line: rgba(216, 166, 87, 0.10);
+
+  --shadow-card: none;
+  --shadow-card-hover: none;
+}
+
+/* ============================================================================
+   2. TOKENS — THÈME CLAIR
+   ========================================================================== */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --ink:      #f2eee5;
+  --ink-2:    #f6f3ec;
+  --card:     #fbf9f4;
+  --card-2:   #ffffff;
+  --card-3:   #efeade;
+
+  --line:      #e2dccd;
+  --line-soft: #ede8dc;
+  --line-hard: #c8bfa9;
+
+  --paper:  #1c1a15;
+  --text:   #1c1a15;
+  --text-2: #403c33;
+  --text-3: #78715f;
+  --text-4: #9d968a;
+
+  --gold:       #a9762a;
+  --gold-2:     #8a5f1d;
+  --gold-dim:   rgba(169, 118, 42, 0.09);
+  --gold-line:  rgba(169, 118, 42, 0.4);
+  --gold-glow:  rgba(169, 118, 42, 0.22);
+
+  --ok:        #2f7d5a;
+  --ok-dim:    rgba(47, 125, 90, 0.09);
+  --ok-line:   rgba(47, 125, 90, 0.3);
+  --warn:      #a9762a;
+  --warn-dim:  rgba(169, 118, 42, 0.09);
+  --warn-line: rgba(169, 118, 42, 0.3);
+  --err:       #b3392f;
+  --err-dim:   rgba(179, 57, 47, 0.08);
+  --err-line:  rgba(179, 57, 47, 0.3);
+
+  --bg-lavis: radial-gradient(900px 500px at 84% -8%, rgba(169, 118, 42, 0.09), transparent 60%),
+              radial-gradient(820px 480px at 6% 4%,   rgba(90, 120, 200, 0.05), transparent 58%);
+  --bg-grad:  linear-gradient(180deg, #f8f5ef, #f2eee5);
+  --dome-line: rgba(169, 118, 42, 0.13);
+
+  --shadow-card: 0 1px 2px rgba(80, 66, 40, 0.04);
+  --shadow-card-hover: 0 6px 20px rgba(80, 66, 40, 0.08);
+}
+
+/* ============================================================================
+   3. TOKENS COMMUNS (formes, mouvement, typo)
+   ========================================================================== */
+:root {
+  --serif: "Spectral", Georgia, "Times New Roman", serif;
+  --sans:  "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --mono:  "JetBrains Mono", ui-monospace, "SF Mono", monospace;
+
+  --r-sm: 3px;
+  --r:    4px;
+  --r-lg: 6px;
+
+  --t-fast: 120ms cubic-bezier(0.4, 0, 0.2, 1);
+  --t-base: 180ms cubic-bezier(0.4, 0, 0.2, 1);
+  --t-slow: 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ============================================================================
+   4. BASE
+   ========================================================================== */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-2);
+  background: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  font-synthesis: none;
+  transition: background-color var(--t-slow), color var(--t-slow);
+}
+
+/* Lavis de fond (halo doré + tache froide) — fixe, non cliquable. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background: var(--bg-lavis), var(--bg-grad);
+}
+
+/* Cercle de coupole en bas de l'écran — la signature de l'observatoire. */
+body::after {
+  content: "";
+  position: fixed;
+  left: 50%;
+  bottom: -42vw;
+  width: 150vw;
+  height: 80vw;
+  transform: translateX(-50%);
+  z-index: -1;
+  pointer-events: none;
+  border-radius: 50%;
+  border: 1px solid var(--dome-line);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--dome-line) 50%, transparent) inset,
+              0 -40px 120px var(--dome-line) inset;
+}
+
+::selection {
+  background: var(--gold-dim);
+  color: var(--text);
+}
+
+/* Barre de défilement discrète (WebKit). */
+::-webkit-scrollbar { width: 11px; height: 11px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border: 3px solid var(--ink);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--line-hard); }
+
+/* ============================================================================
+   5. MISE EN PAGE
+   ========================================================================== */
+.app {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 44px 30px 110px;
+}
+
+/* --- Bandeau d'en-tête, façon plaque d'observatoire ---------------------- */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 22px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 40px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+.logo {
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  border-radius: var(--r-sm);
+  display: grid;
+  place-items: center;
+  color: var(--paper);
+  transition: color var(--t-slow);
+}
+
+/* Le logo (tracé fourni) : le trait et le H prennent `currentColor`, donc la
+   couleur du thème ; l'astre garde son orange d'origine. Pas de cadre, pas de
+   fond : le dessin respire. */
+.logo .hyperion-mark {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.brand-text {
+  min-width: 0;
+}
+
+h1 {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.1;
+  color: var(--paper);
+  margin: 0;
+  white-space: nowrap;
+}
+
+.brand-sub {
+  font-size: 11px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-top: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.header-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-meta {
+  display: flex;
+  gap: 8px;
+}
+
+/* Bouton de bascule de thème (icône seule). */
+.theme-toggle {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r);
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--text-3);
+  cursor: pointer;
+  transition: color var(--t-base), border-color var(--t-base), background var(--t-base);
+}
+
+.theme-toggle:hover {
+  color: var(--gold-2);
+  border-color: var(--gold-line);
+  background: var(--gold-dim);
+}
+
+.theme-toggle svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* --- Colonnes ------------------------------------------------------------ */
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 940px) {
+  .columns { grid-template-columns: 1fr; }
+}
+
+.col-main,
+.col-side {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+
+/* ============================================================================
+   6. PANNEAUX & CARTES
+   ========================================================================== */
+.panel {
+  position: relative;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-card);
+  transition: border-color var(--t-slow), box-shadow var(--t-slow);
+}
+
+/* Filet doré qui s'allume sur le bord supérieur au survol. */
+.panel::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: 24px;
+  right: 24px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold-line), transparent);
+  opacity: 0;
+  transition: opacity var(--t-slow);
+}
+
+.panel:hover::before { opacity: 1; }
+.panel:hover { box-shadow: var(--shadow-card-hover); }
+
+.panel h2 {
+  font-family: var(--serif);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--paper);
+  margin: 0;
+}
+
+.panel h3 {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin: 0 0 14px;
+}
+
+.panel.side { padding: 22px; }
+
+/* ============================================================================
+   7. ANIMATIONS D'APPARITION (« un peu de vie »)
+   ========================================================================== */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.animate-in {
+  animation: rise var(--t-slow) both;
+}
+
+/* Décalage en cascade : chaque enfant entre un peu après le précédent. */
+.stagger > * { animation: rise var(--t-slow) both; }
+.stagger > *:nth-child(1) { animation-delay: 0ms; }
+.stagger > *:nth-child(2) { animation-delay: 60ms; }
+.stagger > *:nth-child(3) { animation-delay: 120ms; }
+.stagger > *:nth-child(4) { animation-delay: 180ms; }
+.stagger > *:nth-child(5) { animation-delay: 240ms; }
+
+/* Respect du réglage système « réduire les animations ». */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ============================================================================
+   8. ZONE DE DÉPÔT (sélection du dossier)
+   ========================================================================== */
+.drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  padding: 44px 24px;
+  border: 1px dashed var(--line);
+  border-radius: var(--r-lg);
+  background: var(--card);
+  cursor: pointer;
+  transition: border-color var(--t-slow), background var(--t-slow);
+}
+
+.drop:hover {
+  border-color: var(--gold-line);
+  background: linear-gradient(180deg, var(--gold-dim), var(--card));
+}
+
+.drop.filled {
+  align-items: flex-start;
+  text-align: left;
+  border-style: solid;
+  padding: 24px;
+}
+
+.drop-icon { color: var(--gold); margin-bottom: 6px; }
+.drop.filled .drop-icon { opacity: 0.85; margin-bottom: 10px; }
+
+.drop h2 {
+  font-family: var(--serif);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--paper);
+}
+
+.path {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  color: var(--text-3);
+  word-break: break-all;
+  margin: 4px 0 0;
+  line-height: 1.5;
+}
+
+.drop.filled .path { color: var(--text-2); }
+
+.scan-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+/* ============================================================================
+   9. BADGES & PUCES
+   ========================================================================== */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 11px;
+  border-radius: var(--r);
+  font-family: var(--mono);
+  font-size: 11.5px;
+  background: var(--card-2);
+  border: 1px solid var(--line);
+  color: var(--text-3);
+}
+
+.badge svg { width: 11px; height: 11px; }
+
+.badge.ok {
+  color: var(--ok);
+  background: var(--ok-dim);
+  border-color: var(--ok-line);
+}
+
+.badge.warn {
+  color: var(--warn);
+  background: var(--warn-dim);
+  border-color: var(--warn-line);
+}
+
+.badge.info {
+  color: var(--gold-2);
+  background: var(--gold-dim);
+  border-color: var(--gold-line);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 15px;
+  border-radius: var(--r);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  background: var(--card);
+  border: 1px solid var(--line);
+  color: var(--text-3);
+  cursor: pointer;
+  transition: color var(--t-base), border-color var(--t-base), background var(--t-base);
+}
+
+.chip svg { width: 13px; height: 13px; }
+
+.chip:hover { color: var(--text); border-color: var(--text-3); }
+
+.chip.on {
+  color: var(--gold-2);
+  border-color: var(--gold-line);
+  background: var(--gold-dim);
+}
+
+/* ============================================================================
+   10. BOUTONS — piste D : trait principal + texte secondaire
+   ----------------------------------------------------------------------------
+   Pas de dégradé, pas d'ombre colorée, pas de reflet : uniquement trait et
+   couleur. C'est ce qui les distingue d'un rendu généré automatiquement.
+   ========================================================================== */
+.actions {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* Bouton cadré (trait). */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 11px 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: transparent;
+  color: var(--text-2);
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color var(--t-base), border-color var(--t-base), background var(--t-base);
+}
+
+.btn svg { width: 15px; height: 15px; }
+
+.btn:hover { color: var(--paper); border-color: var(--text-3); }
+
+/* Principal : trait or. Au survol, fond or très léger. */
+.btn.primary {
+  color: var(--gold-2);
+  border-color: var(--gold-line);
+}
+
+.btn.primary:hover {
+  background: var(--gold-dim);
+  border-color: var(--gold);
+  color: var(--gold-2);
+}
+
+.btn.danger {
+  color: var(--err);
+  border-color: var(--err-line);
+}
+
+.btn.danger:hover {
+  background: var(--err-dim);
+  color: var(--err);
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn.small { padding: 8px 14px; font-size: 12px; }
+
+.btn.icon {
+  padding: 10px;
+  width: 38px;
+  height: 38px;
+}
+
+/* Bouton texte (actions secondaires) : filet qui se tire au survol. */
+.tbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  padding: 10px 2px;
+  background: none;
+  border: none;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-3);
+  cursor: pointer;
+  transition: color var(--t-base);
+}
+
+.tbtn svg { width: 15px; height: 15px; }
+
+.tbtn::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 4px;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--t-slow);
+}
+
+.tbtn:hover { color: var(--paper); }
+.tbtn:hover::after { transform: scaleX(1); }
+
+.tbtn.strong { color: var(--paper); }
+.tbtn.strong::after { transform: scaleX(1); background: var(--gold-line); }
+.tbtn.strong:hover { color: var(--gold-2); }
+
+.tbtn.danger { color: var(--err); }
+
+.tbtn.small { font-size: 12px; padding: 8px 2px; }
+
+.tbtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Séparateur vertical entre l'action principale et les secondaires. */
+.actions-sep {
+  width: 1px;
+  height: 20px;
+  background: var(--line);
+}
+
+/* ============================================================================
+   11. ÉTAPES & PROGRESSION
+   ========================================================================== */
+.steps {
+  display: flex;
+  flex-wrap: wrap;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  overflow: hidden;
+  margin-bottom: 18px;
+}
+
+.step {
+  flex: 1;
+  min-width: 132px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 12px 15px;
+  font-size: 12px;
+  color: var(--text-3);
+  background: var(--card);
+  border-right: 1px solid var(--line);
+  transition: color var(--t-slow), background var(--t-slow);
+}
+
+.step:last-child { border-right: none; }
+
+.step .step-n {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-4);
+}
+
+.step.active {
+  color: var(--gold-2);
+  background: var(--gold-dim);
+}
+
+.step.active .step-n { color: var(--gold); }
+
+.step.done { color: var(--ok); }
+.step.done .step-n { color: var(--ok); }
+
+.progress-wrap { margin: 4px 0 18px; }
+
+.progress-bar {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--card-3);
+  overflow: hidden;
+  border: 1px solid var(--line);
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--gold), var(--gold-2));
+  transition: width var(--t-slow);
+  position: relative;
+}
+
+.progress-fill:not(.complete)::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--paper) 45%, transparent), transparent);
+  animation: shimmer 1.8s ease-in-out infinite;
+}
+
+.progress-fill.complete {
+  background: linear-gradient(90deg, var(--ok), color-mix(in srgb, var(--ok) 70%, #ffffff));
+}
+
+.progress-fill.complete::after { display: none; }
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.progress-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.progress-text { font-size: 12.5px; color: var(--text-2); }
+
+.progress-time {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ============================================================================
+   12. GROUPES DE RÉGLAGES
+   ========================================================================== */
+.group {
+  margin-top: 20px;
+  border-top: 1px solid var(--line-soft);
+  padding-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.group-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.group-title {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--text-4);
+}
+
+.hint { font-size: 11.5px; color: var(--text-4); }
+
+.note {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-3);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1.5;
+}
+
+.muted { color: var(--text-3); font-size: 12.5px; margin: 8px 0 0; }
+
+/* ============================================================================
+   13. CURSEURS
+   ========================================================================== */
+.sliders {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.slider {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.slider-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.slider-head output {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--gold-2);
+  font-variant-numeric: tabular-nums;
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 3px;
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+  background: linear-gradient(
+    90deg,
+    var(--gold) 0%,
+    var(--gold) var(--pct, 40%),
+    var(--line) var(--pct, 40%),
+    var(--line) 100%
+  );
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--card-2);
+  border: 1px solid var(--gold);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--paper) 22%, transparent);
+  transition: box-shadow var(--t-base);
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 0 6px var(--gold-dim);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--card-2);
+  border: 1px solid var(--gold);
+  cursor: pointer;
+}
+
+input[type="range"]:focus-visible {
+  outline: 2px solid var(--gold-line);
+  outline-offset: 4px;
+}
+
+/* ============================================================================
+   14. INTERRUPTEURS
+   ========================================================================== */
+.toggles {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  cursor: pointer;
+  font-size: 13.5px;
+}
+
+.switch {
+  position: relative;
+  flex-shrink: 0;
+  width: 40px;
+  height: 22px;
+  border-radius: 11px;
+  background: var(--card-3);
+  border: 1px solid var(--line);
+  transition: background var(--t-base), border-color var(--t-base);
+  margin-top: 1px;
+}
+
+.switch.on {
+  background: var(--gold-dim);
+  border-color: var(--gold-line);
+}
+
+.switch input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+.switch .knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--card-2);
+  border: 1px solid var(--line);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--paper) 22%, transparent);
+  transition: transform var(--t-slow), background var(--t-base), border-color var(--t-base);
+  pointer-events: none;
+}
+
+.switch.on .knob {
+  transform: translateX(18px);
+  background: var(--gold);
+  border-color: var(--gold);
+}
+
+.switch input:focus-visible + .knob {
+  outline: 2px solid var(--gold-line);
+  outline-offset: 2px;
+}
+
+.toggle-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.toggle-label { color: var(--text); font-weight: 600; }
+
+.toggle-desc {
+  font-size: 11.5px;
+  color: var(--text-3);
+  line-height: 1.45;
+}
+
+/* ============================================================================
+   15. RÉSULTAT
+   ========================================================================== */
+.panel.success { border-color: var(--ok-line); }
+
+.result-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.result-head h2 {
+  font-family: var(--serif);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--ok);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.result-head h2 svg { width: 17px; height: 17px; }
+
+.result-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.stats {
+  display: flex;
+  gap: 44px;
+  margin: 26px 0 22px;
+  flex-wrap: wrap;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stat-value {
+  font-family: var(--serif);
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--paper);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.05;
+}
+
+.stat-sub {
+  font-size: 15px;
+  color: var(--text-4);
+  font-weight: 400;
+}
+
+.stat-label {
+  font-size: 10.5px;
+  color: var(--text-4);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+
+/* ============================================================================
+   16. APERÇU IMAGE
+   ========================================================================== */
+.preview {
+  margin-top: 4px;
+}
+
+.preview img {
+  width: 100%;
+  display: block;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  background: #000;
+  cursor: crosshair;
+}
+
+.frame {
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: #000;
+  position: relative;
+}
+
+.detail {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.detail img {
+  width: 100%;
+  max-width: 600px;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  image-rendering: pixelated;
+  animation: fade var(--t-slow) both;
+}
+
+/* ============================================================================
+   17. COLONNE LATÉRALE
+   ========================================================================== */
+.steps-help {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.steps-help li {
+  display: flex;
+  gap: 11px;
+  align-items: flex-start;
+}
+
+.steps-help .num {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--r-sm);
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--gold-2);
+  background: var(--gold-dim);
+  border: 1px solid var(--gold-line);
+}
+
+.steps-help b {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.steps-help span {
+  font-size: 12px;
+  color: var(--text-3);
+  line-height: 1.45;
+}
+
+.summary {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.summary li {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 12.5px;
+}
+
+.summary span { color: var(--text-3); }
+
+.summary b {
+  color: var(--text);
+  font-weight: 600;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================================
+   18. ERREUR
+   ========================================================================== */
+.panel.error {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border-color: var(--err-line);
+  color: var(--err);
+  background: var(--err-dim);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.panel.error svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ============================================================================
+   19. BASCULE DE THÈME — transition douce des surfaces
+   ========================================================================== */
+.panel,
+.card,
+.drop,
+.badge,
+.chip,
+.btn,
+.step,
+.switch,
+input[type="range"] {
+  transition-property: background-color, border-color, color, box-shadow;
+}
+
+/* ============================================================================
+   20. ASSISTANT PAS À PAS
+   ========================================================================== */
+.wizard {
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.wiz-steps {
+  display: flex;
+  align-items: center;
+  margin-bottom: 34px;
+}
+
+.wiz-step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.wiz-step .bullet {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--text-4);
+  font-family: var(--mono);
+  font-size: 12px;
+  transition: all var(--t-slow);
+}
+
+.wiz-step .bullet svg { width: 14px; height: 14px; }
+
+.wiz-step .lbl {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.wiz-step .lbl b {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-3);
+  transition: color var(--t-slow);
+}
+
+.wiz-step .lbl span {
+  font-size: 11px;
+  color: var(--text-4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wiz-step .rail {
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+  margin: 0 14px;
+  min-width: 16px;
+}
+
+.wiz-step.done .bullet {
+  color: var(--ok);
+  border-color: var(--ok-line);
+  background: var(--ok-dim);
+}
+
+.wiz-step.done .lbl b { color: var(--ok); }
+
+.wiz-step.active .bullet {
+  color: var(--gold-2);
+  border-color: var(--gold-line);
+  background: var(--gold-dim);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--gold) 10%, transparent);
+}
+
+.wiz-step.active .lbl b { color: var(--paper); }
+
+.wiz-body {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 30px;
+  animation: rise var(--t-slow) both;
+}
+
+.wiz-title {
+  font-family: var(--serif);
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--paper);
+  margin-bottom: 6px;
+}
+
+.wiz-desc {
+  color: var(--text-3);
+  font-size: 14px;
+  margin-bottom: 26px;
+  max-width: 560px;
+}
+
+.wiz-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 28px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.recap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.recap-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 14px;
+  font-size: 13px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.recap-row span { color: var(--text-3); }
+.recap-row b {
+  color: var(--text);
+  font-family: var(--mono);
+  font-weight: 500;
+}
+
+/* ============================================================================
+   21. VOLET DE RÉGLAGES (drawer)
+   ========================================================================== */
+.drawer-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: color-mix(in srgb, var(--ink) 55%, transparent);
+  backdrop-filter: blur(2px);
+  animation: fade var(--t-base) both;
+}
+
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 41;
+  width: 440px;
+  max-width: 94vw;
+  background: var(--card-2);
+  border-left: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  box-shadow: -20px 0 60px rgba(0, 0, 0, 0.3);
+  animation: slide-in var(--t-slow) both;
+}
+
+@keyframes slide-in {
+  from { transform: translateX(24px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
+.drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 22px 24px;
+  border-bottom: 1px solid var(--line);
+}
+
+.drawer-head h2 {
+  font-family: var(--serif);
+  font-size: 19px;
+  font-weight: 600;
+  color: var(--paper);
+  margin: 0;
+}
+
+.drawer-body {
+  flex: 1;
+  overflow: auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.drawer-foot {
+  padding: 20px 24px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.block {
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r);
+  padding: 18px;
+  background: var(--card);
+}
+
+.block .group-title {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.block .blk-desc {
+  font-size: 12px;
+  color: var(--text-4);
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
+
+/* ============================================================================
+   22. ÉCRAN DE RÉSULTAT
+   ========================================================================== */
+.result-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 22px;
+  align-items: start;
+}
+
+@media (max-width: 1000px) {
+  .result-grid { grid-template-columns: 1fr; }
+}
+
+.result-hero {
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  background: #000;
+  position: relative;
+}
+
+.result-hero img {
+  display: block;
+  width: 100%;
+  cursor: crosshair;
+}
+
+.result-hero .hint {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  padding: 6px 12px;
+  border-radius: var(--r);
+  font-family: var(--mono);
+  font-size: 11px;
+  background: color-mix(in srgb, var(--ink) 82%, transparent);
+  border: 1px solid var(--gold-line);
+  color: var(--gold-2);
+  backdrop-filter: blur(8px);
+}
+
+.result-empty {
+  display: grid;
+  place-items: center;
+  min-height: 340px;
+  color: var(--text-4);
+  font-family: var(--mono);
+  font-size: 12.5px;
+  text-align: center;
+  padding: 40px;
+}
+
+.tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.tab {
+  padding: 7px 14px;
+  border-radius: var(--r);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-3);
+  border: 1px solid transparent;
+  cursor: pointer;
+  background: none;
+  font-family: inherit;
+  transition: all var(--t-base);
+}
+
+.tab:hover { color: var(--text); }
+
+.tab.on {
+  color: var(--gold-2);
+  background: var(--gold-dim);
+  border-color: var(--gold-line);
+}
+
+.stat-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.stat-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stat-card .stat-value { font-size: 28px; }
+
+.reveal {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.reveal img {
+  width: 100%;
+  border-radius: var(--r);
+  border: 1px solid var(--line);
+  image-rendering: pixelated;
+  animation: fade var(--t-slow) both;
+}
+
+/* ============================================================================
+   23. ÉCRAN DE TRAITEMENT EN COURS
+   ========================================================================== */
+.running-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  padding: 26px 0 10px;
+}
+
+.running-title {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--paper);
+}
+
+.running-sub {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  color: var(--text-3);
+}
+
+.running-pct {
+  font-family: var(--serif);
+  font-size: 44px;
+  font-weight: 600;
+  color: var(--gold-2);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================================
+   24. ENCADRÉ D'AVERTISSEMENT (frames écartées)
+   ========================================================================== */
+.warn-box {
+  border-color: var(--warn-line);
+}
+
+.warn-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--gold-2);
+  font-size: 13.5px;
+}
+
+.warn-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 220px;
+  overflow: auto;
+}
+
+.warn-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 14px;
+  font-size: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.warn-list li b {
+  color: var(--text);
+  font-family: var(--mono);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.warn-list li span {
+  color: var(--text-4);
+  text-align: right;
+  flex-shrink: 0;
+  max-width: 55%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

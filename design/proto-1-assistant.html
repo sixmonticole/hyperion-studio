@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Hyperion Studio — Assistant</title>
+<link rel="stylesheet" href="proto.css" />
+<style>
+    /* Barre d'étapes de l'assistant */
+    .wizard{max-width:820px;margin:0 auto}
+    .wiz-steps{display:flex;align-items:center;gap:0;margin-bottom:34px}
+    .wiz-step{display:flex;align-items:center;gap:12px;flex:1}
+    .wiz-step .bullet{width:30px;height:30px;flex-shrink:0;border-radius:50%;display:grid;place-items:center;
+      border:1px solid var(--line);background:var(--card);color:var(--text-4);font-family:var(--mono);font-size:12px;
+      transition:all var(--t-slow)}
+    .wiz-step .lbl{display:flex;flex-direction:column}
+    .wiz-step .lbl b{font-size:13px;font-weight:600;color:var(--text-3);transition:color var(--t-slow)}
+    .wiz-step .lbl span{font-size:11px;color:var(--text-4)}
+    .wiz-step .rail{flex:1;height:1px;background:var(--line);margin:0 14px}
+    .wiz-step.done .bullet{color:var(--ok);border-color:var(--ok-line);background:var(--ok-dim)}
+    .wiz-step.done .lbl b{color:var(--ok)}
+    .wiz-step.active .bullet{color:var(--gold-2);border-color:var(--gold-line);background:var(--gold-dim);
+      box-shadow:0 0 0 4px color-mix(in srgb,var(--gold) 10%,transparent)}
+    .wiz-step.active .lbl b{color:var(--paper)}
+    .wiz-body{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);padding:30px}
+    .wiz-title{font-family:var(--serif);font-size:24px;font-weight:600;color:var(--paper);margin-bottom:6px}
+    .wiz-desc{color:var(--text-3);font-size:14px;margin-bottom:26px;max-width:560px}
+    .wiz-foot{display:flex;justify-content:space-between;align-items:center;margin-top:28px;
+      padding-top:22px;border-top:1px solid var(--line-soft)}
+    .recap{display:flex;flex-direction:column;gap:12px;margin-top:22px}
+    .recap-row{display:flex;justify-content:space-between;align-items:baseline;gap:14px;font-size:13px;
+      padding-bottom:12px;border-bottom:1px solid var(--line-soft)}
+    .recap-row span{color:var(--text-3)} .recap-row b{color:var(--text);font-family:var(--mono);font-weight:500}
+    </style>
+</head>
+
+<script>
+function toggleTheme(){
+  const r=document.documentElement;
+  r.setAttribute('data-theme', r.getAttribute('data-theme')==='dark'?'light':'dark');
+}
+</script>
+<div class="app">
+  <header class="header">
+  <div class="brand">
+    <div class="logo"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1095 1095" class="hyperion-mark" aria-hidden="true">
+<path d="M943 132.8C944.68 132.64 946.35 132.47 948.03 132.31C949.35 132.17 950.68 132.03 952 131.88C956.3 131.7 960.6 131.51 964.9 131.32C968.96 131.32 973.03 131.32 977.09 131.32C982.06 131.5 987.03 131.69 992 131.87C993.67 132.02 995.35 132.17 997.02 132.32C999.02 132.48 1001.01 132.65 1003 132.81C1017.3 135.63 1031.03 138.49 1044.03 145.49C1050.03 148.72 1056.03 152.82 1060.95 157.55C1090.33 185.84 1081.9 226.44 1069.13 260.53C1062.78 277.47 1054.35 293.63 1043.95 308.45C1036.73 318.73 1028.07 327.96 1020.13 337.67C1006.23 354.65 991.59 371.1 976.92 387.42C965.56 400.06 954.33 412.84 943.05 425.55C937.84 431.43 932.93 438.36 926.85 443.36C924.12 445.6 920.78 446.96 917.95 448.99C916.96 449.56 915.97 450.13 914.99 450.7C914.16 450.71 913.33 450.73 912.5 450.74C911.03 448.82 909.56 446.9 908.09 444.98C913.04 438.55 916.65 430.24 920.58 423.09C928 409.61 935.66 396.27 943.61 383.1C958.06 359.17 973.52 335.69 986.35 310.82C993.56 296.83 999.5 282.3 1005.23 267.67C1011.12 252.62 1018.74 236.2 1019.29 219.87C1019.47 218.25 1019.65 216.62 1019.82 215C1020.55 207.58 1020.27 199.86 1019.03 192.5C1015.42 171.09 998.27 155.87 976.5 155.09C961.62 154.55 946.25 158.34 932.06 162.51C916.96 166.95 901.71 171.37 887.25 177.72C840.02 198.45 799.72 225.2 758.75 256.25C718.38 286.86 680.28 320.13 644.71 356.21C626.54 374.62 610.02 393.99 596.74 416.26C589.26 428.82 582.53 443.11 582.68 458.02C582.68 460.37 582.68 462.71 582.68 465.05C583.11 467.98 583.54 470.91 583.98 473.84C584.86 487.14 594.98 500.3 604.28 509.21C625.91 529.93 654.18 544.55 680.85 557.63C706.57 570.26 733.36 580.68 759.8 591.67C815.96 615 872.73 638.11 927.1 665.43C945.93 674.89 963.97 686.04 980.9 698.58C986.03 702.38 991.15 706.34 995.99 710.51C998.87 712.99 1001.73 716.12 1004.89 718.09C1007.46 722.52 1011.96 726.23 1015.23 730.26C1021 737.38 1025.91 745.44 1029.62 753.81C1038.99 774.94 1039.35 799.13 1033.71 821.29C1030.45 834.08 1024.17 845.82 1020.65 858.5C1024.12 859.74 1027.59 860.99 1031.07 862.23C1032.69 862.91 1034.32 863.58 1035.95 864.25C1032.77 866.45 1028.69 867.16 1025.1 868.6C1018.39 871.3 1012.17 875.53 1006.57 880.05C994.81 889.54 985.61 901.82 974.87 912.38C955.75 931.17 935.81 948.81 914.33 964.87C872.23 996.33 823.64 1020.3 773.71 1036.31C747.72 1044.65 721.14 1052.5 694.08 1056.51C686.1 1057.69 678.04 1057.91 670 1058.41C667.67 1058.4 665.33 1058.39 663 1058.39C643.65 1057.25 630.45 1056.89 612.25 1049.29C604.04 1045.86 596.36 1042.7 592.88 1034C592.88 1032.33 592.88 1030.67 592.87 1029C595.6 1020.74 602.36 1014.87 608.63 1009.11C625.07 994 646.24 984.16 666.32 974.83C737.84 941.59 814.42 912.55 890.54 892.08C900.28 889.45 910.05 886.91 919.84 884.45C929.83 881.93 940.02 879.98 948.86 874.37C969.81 861.08 979.26 832.01 980.95 808.5C981.58 799.68 981.56 789.84 978.61 781.41C970.09 733.5 913.83 705.12 874.73 685.74C824.61 660.91 772.17 639.92 720.17 619.41C689.15 607.17 657.96 594.88 627.77 580.7C609.55 572.15 591.93 562.26 574.87 551.6C569.27 548.11 564.26 543.34 558.5 540.23C550.17 578.77 541.83 617.32 533.5 655.86C526.28 656.2 519.07 656.54 511.85 656.87C505.61 655.05 490.66 656.22 483.5 656.25C465.17 656.34 446.83 656.24 428.5 656.23C420.84 656.23 408.45 657.83 401.5 655.27C400.64 648.39 403.69 640.31 405.11 633.5C408.54 617.08 412.25 600.72 415.71 584.33C425.8 536.4 435.74 488.42 446.2 440.56C449.48 425.56 452.54 410.5 455.82 395.49C457.52 387.75 460.93 378.66 460.5 370.8C454.56 369.08 446.75 370.3 440.5 370.33C428.5 370.38 416.5 370.31 404.5 370.3C362.83 370.26 321.17 370.32 279.5 370.37C264.17 370.38 248.83 370.33 233.5 370.3C226.72 370.29 217.82 368.84 211.5 371.21C191.17 466.02 170.83 560.83 150.5 655.64C144.98 656.89 139.16 656.33 133.5 656.32C123.5 656.32 113.5 656.19 103.5 656.23C85.5 656.32 67.5 656.21 49.5 656.27C39.52 656.29 28.45 657.58 18.68 655.5C17.63 650.56 19.97 644.41 21.1 639.5C23.79 627.81 26.32 616.08 28.68 604.34C37.15 562.18 46.48 520.16 55.53 478.12C77.51 375.91 98.81 273.53 120.64 171.27C127.8 137.71 134.7 104.01 141.99 70.48C144.55 58.71 146.99 46.89 149.53 35.11C150.73 29.56 151.46 23.82 153.47 18.5C197.24 18.5 241.01 18.5 284.79 18.5C285.63 25.4 282.86 32.95 281.38 39.72C278.12 54.62 275.34 69.64 272.03 84.53C263.18 124.39 255.02 164.39 246.73 204.36C243.96 217.75 241.07 231.12 238.2 244.52C237.14 249.46 235.52 254.48 235.21 259.5C318.29 259.5 401.36 259.5 484.44 259.5C501.67 179.17 518.9 98.83 536.13 18.5C580 18.5 623.86 18.5 667.73 18.5C668.61 25.9 664.93 36.27 663.37 43.77C660.17 59.2 656.84 74.59 653.52 90.01C641.78 144.44 629.79 198.87 618.9 253.48C615.89 268.57 612.58 283.62 609.35 298.68C607.84 305.71 604.08 316.86 604.5 323.66C608.48 321.42 611.75 317.7 615.21 314.69C621.61 309.11 627.97 303.47 634.44 297.96C654.12 281.2 674.48 265.12 695.23 249.71C743.55 213.83 794.75 180.56 851.03 158.54C871.34 150.6 892.41 143.22 913.67 138.28C923.4 136.03 933.22 134.72 943 132.8ZM933.34 896.5C927.34 895.15 920.42 898.27 914.51 900.07C900.01 904.51 885.6 909.65 871.36 914.87C816.51 934.99 763.33 958.2 711.28 984.75C694.89 993.11 679.74 1002.55 664.89 1013.41C659.27 1017.53 650.37 1022.66 655.12 1030.5C682.3 1035.64 710.62 1028.9 736.71 1021.33C782.14 1008.15 825.51 986.56 864.65 960.13C890.32 942.79 915.88 922.42 933.34 896.5Z" fill="currentColor" fill-rule="evenodd"/>
+<path d="M908.09 444.98C909.56 446.9 911.03 448.82 912.5 450.74C913.33 450.73 914.16 450.71 914.99 450.7C915.66 451.07 916.33 451.44 917 451.81C929.42 462.6 942.21 473 952.83 485.69C978.38 516.21 996.98 550.93 1006.97 589.54C1011.01 605.18 1012.59 620.99 1014.19 637C1014.35 641.39 1014.51 645.77 1014.67 650.16C1013.95 656.22 1014.23 662.41 1013.88 668.5C1012.93 684.72 1010.86 702.86 1004.89 718.09C1001.73 716.12 998.87 712.99 995.99 710.51C991.15 706.34 986.03 702.38 980.9 698.58C963.97 686.04 945.93 674.89 927.1 665.43C872.73 638.11 815.96 615 759.8 591.67C733.36 580.68 706.57 570.26 680.85 557.63C654.18 544.55 625.91 529.93 604.28 509.21C594.98 500.3 584.86 487.14 583.98 473.84C647.04 411.78 736.56 384.94 823.25 406.38C842.96 411.26 862.36 418.68 880.28 428.2C889.84 433.28 898.52 440.09 908.09 444.98ZM978.61 781.41C974.98 783.69 970.74 792.56 967.93 796.41C959.94 807.33 951.37 817.7 941.93 827.42C914.26 855.92 873.73 881.3 835.26 891.66C796.75 902.03 756.96 904.95 717.5 897.97C640.39 884.33 571.68 832.44 537.43 762.07C525.9 738.37 518.04 713.57 514.05 687.5C512.92 680.06 510.11 663.65 511.85 656.87C519.07 656.54 526.28 656.2 533.5 655.86C541.83 617.32 550.17 578.77 558.5 540.23C564.26 543.34 569.27 548.11 574.87 551.6C591.93 562.26 609.55 572.15 627.77 580.7C657.96 594.88 689.15 607.17 720.17 619.41C772.17 639.92 824.61 660.91 874.73 685.74C913.83 705.12 970.09 733.5 978.61 781.41Z" fill="#f0b95c" fill-rule="evenodd" stroke="#f0b95c" stroke-width="0.25" stroke-linejoin="round"/>
+</svg></div>
+    <div>
+      <h1>Hyperion Studio</h1>
+      <div class="brand-sub">Observatoire · Empilement astro</div>
+    </div>
+  </div>
+  <div class="header-right">
+    
+    <button class="icon-btn" onclick="toggleTheme()" title="Changer de thème"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0-14v2m0 14v2M3 12h2m14 0h2M5.6 5.6l1.4 1.4m10 10 1.4 1.4m0-12.8-1.4 1.4m-10 10L5.6 18.4"/></svg></button>
+  </div>
+</header>
+  <div class="wizard">
+    <div class="wiz-steps">
+      <div class="wiz-step done">
+        <span class="bullet"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
+        <span class="lbl"><b>Dossier</b><span>428 images</span></span>
+        <span class="rail"></span>
+      </div>
+      <div class="wiz-step active">
+        <span class="bullet">02</span>
+        <span class="lbl"><b>Réglages</b><span>à ajuster</span></span>
+        <span class="rail"></span>
+      </div>
+      <div class="wiz-step">
+        <span class="bullet">03</span>
+        <span class="lbl"><b>Traitement</b><span>puis résultat</span></span>
+      </div>
+    </div>
+
+    <div class="wiz-body">
+      <div class="wiz-title">Réglages de l'empilement</div>
+      <p class="wiz-desc">Tout fonctionne déjà sans rien toucher. Ajustez seulement si vous le souhaitez,
+         ou ouvrez le volet pour les réglages avancés.</p>
+
+      <div class="group" style="margin-top:0;border-top:none;padding-top:0">
+        <div class="group-head"><span class="group-title">Orientation</span>
+          <span class="hint">l'EXIF ignore le retournement du télescope</span></div>
+        <div class="chips">
+          <button class="chip"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7M21 3v6h-6"/></svg> 90°</button>
+          <button class="chip"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7M21 3v6h-6"/></svg> 180°</button>
+          <button class="chip">Miroir H</button>
+          <button class="chip">Miroir V</button>
+          <button class="chip"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v6h6M3.5 9a9 9 0 1 1 2.6 6.4"/></svg> Réinitialiser</button>
+        </div>
+      </div>
+
+      <div class="group">
+        <div class="group-head"><span class="group-title">Post-traitement</span></div>
+        <label class="toggle">
+          <span class="switch on"><span class="knob"></span></span>
+          <span class="toggle-text">
+            <span class="toggle-label">Améliorer l'image finale</span>
+            <span class="toggle-desc">Netteté par ondelettes et contraste. Désactivé = stack brut.</span>
+          </span>
+        </label>
+      </div>
+
+      <div class="recap">
+        <div class="recap-row"><span>Frames conservées</span><b>25 %</b></div>
+        <div class="recap-row"><span>Empilement par blocs</span><b>10 frames</b></div>
+        <div class="recap-row"><span>Alignement</span><b>activé</b></div>
+        <div class="recap-row"><span>Crop</span><b>automatique</b></div>
+      </div>
+
+      <div class="wiz-foot">
+        <button class="tbtn"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6"/></svg> Retour</button>
+        <div class="actions">
+          <button class="tbtn"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg> Tous les réglages</button>
+          <button class="btn primary"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4l14 8-14 8V4Z"/></svg> Lancer le traitement</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body></html>

@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<title>Hyperion Studio — Titan</title>
+<!--
+  DIRECTION 3 — « TITAN »
+  ------------------------------------------------------------------
+  Univers : la forge d'Hyperion, le minéral, le tirage argentique.
+  Typo  :  Archivo Expanded (grotesque large et affirmée, titres)
+           Archivo (texte) + IBM Plex Mono (données)
+  Palette : basalte, ambre incandescent, noir de carbone.
+  Signature : titres XXL en majuscules larges, ambre qui s'oppose au noir,
+              gros contraste, textures de grain, chiffres monumentaux.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Archivo+Expanded:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --black:#08090c;
+  --bg:#0b0c10;
+  --surf:#12141a;
+  --surf-2:#171a22;
+  --surf-3:#1e222c;
+  --line:#242833;
+  --line-soft:#1a1d25;
+
+  --white:#f5f2ec;
+  --txt:#f0ece4;
+  --txt-2:#a8a49b;
+  --txt-3:#726e66;
+
+  --amber:#ff9f1c;
+  --amber-2:#ffc266;
+  --amber-hot:#ff7a00;
+  --amber-dim:rgba(255,159,28,.10);
+  --amber-line:rgba(255,159,28,.30);
+  --amber-glow:rgba(255,159,28,.45);
+
+  --ok:#5fd39a; --warn:#ffc266; --err:#ff5f6d;
+
+  --exp:'Archivo Expanded','Archivo',system-ui,sans-serif;
+  --g:'Archivo',system-ui,sans-serif;
+  --m:'IBM Plex Mono',ui-monospace,monospace;
+  --r:2px; --r-lg:3px;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:var(--g);background:var(--bg);color:var(--txt-2);
+  font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased;
+  position:relative;overflow-x:hidden;
+}
+/* Grain + halo ambre : la texture « minerai ». */
+body::before{
+  content:"";position:fixed;inset:0;z-index:-2;
+  background:
+    radial-gradient(760px 500px at 90% -10%, rgba(255,122,0,.16), transparent 60%),
+    radial-gradient(680px 420px at 0% 8%,   rgba(255,159,28,.08), transparent 58%),
+    linear-gradient(180deg,#0d0e13,#08090c);
+}
+body::after{
+  content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.5;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
+  mix-blend-mode:overlay;
+}
+
+.wrap{max-width:1200px;margin:0 auto;padding:40px 30px 110px}
+
+.top{display:flex;align-items:center;gap:18px;margin-bottom:60px;padding-bottom:22px;border-bottom:2px solid var(--line)}
+.mark{width:54px;height:54px;flex-shrink:0;display:grid;place-items:center;position:relative;
+  background:linear-gradient(155deg,#1c1f28,#0e1016);border:1px solid var(--amber-line)}
+.mark svg{width:28px;height:28px;color:var(--amber);filter:drop-shadow(0 0 10px rgba(255,159,28,.5))}
+.mark::after{content:"";position:absolute;inset:-1px;border:1px solid transparent;
+  border-top-color:var(--amber);animation:spin 8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.brand h1{font-family:var(--exp);font-size:21px;font-weight:800;letter-spacing:.02em;color:var(--white);line-height:1;
+  text-transform:uppercase}
+.brand .s{font-family:var(--m);font-size:10px;color:var(--amber);letter-spacing:.3em;margin-top:6px;text-transform:uppercase}
+.top .mono{margin-left:auto;font-family:var(--m);font-size:10.5px;color:var(--txt-3);letter-spacing:.08em}
+
+.hero{margin-bottom:64px}
+.hero .kick{font-family:var(--m);font-size:10.5px;color:var(--amber);letter-spacing:.3em;text-transform:uppercase;margin-bottom:16px}
+.hero h2{font-family:var(--exp);font-size:clamp(38px,6vw,66px);font-weight:800;line-height:.98;letter-spacing:-.01em;
+  color:var(--white);text-transform:uppercase;max-width:900px}
+.hero h2 em{font-style:normal;color:var(--amber);display:block}
+.hero p{margin-top:20px;max-width:600px;color:var(--txt-2);font-size:15px}
+
+.sec{margin-bottom:68px}
+.sec > h3{font-family:var(--exp);font-size:12px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--white);margin-bottom:20px;display:flex;align-items:center;gap:12px}
+.sec > h3::before{content:"";width:26px;height:2px;background:var(--amber)}
+
+.grid{display:grid;gap:18px}
+.c2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.c3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.c4{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:900px){.c2,.c3,.c4{grid-template-columns:1fr}}
+.row{display:flex;gap:11px;flex-wrap:wrap;align-items:center}
+.stack{display:flex;flex-direction:column;gap:16px}
+.lbl{font-family:var(--m);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--txt-3);margin-bottom:13px}
+
+.card{background:linear-gradient(170deg,var(--surf),#0f1116);border:1px solid var(--line);border-radius:var(--r-lg);
+  padding:24px;position:relative;transition:border-color .25s,transform .25s}
+.card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;background:transparent;transition:background .25s}
+.card:hover{border-color:var(--line);transform:translateY(-2px)}
+.card:hover::before{background:var(--amber)}
+.card .ct{font-family:var(--exp);font-size:15px;font-weight:700;color:var(--white);margin-bottom:4px;text-transform:uppercase;letter-spacing:.01em}
+.card .cs{font-size:12.5px;color:var(--txt-3)}
+
+.sws{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:11px}
+.sw{border:1px solid var(--line);background:var(--surf);border-radius:var(--r)}
+.sw .chip{height:56px;border-radius:var(--r) var(--r) 0 0}
+.sw .m{padding:9px 11px}
+.sw .m b{display:block;font-family:var(--exp);font-size:11.5px;color:var(--white);font-weight:700;text-transform:uppercase;letter-spacing:.03em}
+.sw .m span{font-family:var(--m);font-size:10px;color:var(--txt-3)}
+
+.trow{display:flex;align-items:baseline;gap:18px;padding:15px 0;border-bottom:1px solid var(--line-soft)}
+.trow .tag{font-family:var(--m);font-size:10px;color:var(--txt-3);min-width:180px;text-transform:uppercase}
+.t-hero{font-family:var(--exp);font-size:40px;font-weight:800;color:var(--white);letter-spacing:-.01em;text-transform:uppercase;line-height:1}
+.t-hero em{font-style:normal;color:var(--amber)}
+.t-h1{font-family:var(--exp);font-size:26px;font-weight:800;color:var(--white);text-transform:uppercase;letter-spacing:.01em}
+.t-h2{font-family:var(--g);font-size:17px;font-weight:700;color:var(--white)}
+.t-body{font-size:14px;color:var(--txt-2)}
+.t-small{font-size:12.5px;color:var(--txt-3)}
+.mono{font-family:var(--m);font-size:12px;color:var(--txt-3)}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;border:1px solid transparent;border-radius:var(--r);
+  padding:12px 22px;font-family:var(--exp);font-size:12.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  cursor:pointer;white-space:nowrap;position:relative;overflow:hidden;transition:all .18s}
+.btn:active{transform:translateY(1px)}
+.btn svg{width:15px;height:15px}
+.btn-p{color:#1a0f00;background:linear-gradient(100deg,var(--amber-2),var(--amber) 55%,var(--amber-hot));
+  box-shadow:0 0 26px rgba(255,159,28,.3),0 2px 0 rgba(0,0,0,.4)}
+.btn-p:hover{box-shadow:0 0 38px rgba(255,159,28,.55),0 2px 0 rgba(0,0,0,.4)}
+.btn-p::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 35%,rgba(255,255,255,.6),transparent 65%);
+  transform:translateX(-120%);transition:transform .5s}
+.btn-p:hover::after{transform:translateX(120%)}
+.btn-s{color:var(--white);background:var(--surf-2);border-color:var(--line)}
+.btn-s:hover{border-color:var(--amber-line);color:var(--amber-2)}
+.btn-g{color:var(--txt-3);background:transparent;border-color:var(--line)}
+.btn-g:hover{color:var(--white);border-color:var(--txt-3)}
+.btn-d{color:var(--err);background:transparent;border-color:rgba(255,95,109,.3)}
+.btn-d:hover{background:rgba(255,95,109,.08)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-sm{padding:9px 15px;font-size:11.5px}
+.btn-ic{padding:11px;width:40px;height:40px}
+
+.badge{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:var(--r);
+  font-family:var(--m);font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;
+  background:var(--surf-2);border:1px solid var(--line);color:var(--txt-3)}
+.badge svg{width:11px;height:11px}
+.b-ok{color:var(--ok);border-color:rgba(95,211,154,.32);background:rgba(95,211,154,.07)}
+.b-warn{color:var(--warn);border-color:rgba(255,194,102,.32);background:rgba(255,194,102,.07)}
+.b-info{color:var(--amber-2);border-color:var(--amber-line);background:var(--amber-dim)}
+
+.chip{padding:9px 16px;border-radius:var(--r);font-family:var(--exp);font-size:11.5px;font-weight:700;
+  letter-spacing:.05em;text-transform:uppercase;background:transparent;border:1px solid var(--line);color:var(--txt-3);
+  cursor:pointer;display:inline-flex;align-items:center;gap:7px;transition:all .18s}
+.chip svg{width:13px;height:13px}
+.chip:hover{color:var(--white);border-color:var(--txt-3)}
+.chip.on{color:#1a0f00;background:var(--amber);border-color:transparent;box-shadow:0 0 18px rgba(255,159,28,.3)}
+
+.slider{display:flex;flex-direction:column;gap:10px}
+.slider .sh{display:flex;justify-content:space-between;align-items:baseline}
+.slider .sh span{font-size:13px;color:var(--txt-2);font-weight:500}
+.slider .sh output{font-family:var(--m);font-size:12.5px;color:var(--amber);font-weight:500}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:5px;border-radius:0;outline:none;cursor:pointer;
+  background:linear-gradient(90deg,var(--amber) 0%,var(--amber) var(--pct,40%),var(--surf-3) var(--pct,40%),var(--surf-3) 100%)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:1px;
+  background:var(--white);border:none;box-shadow:0 0 0 0 var(--amber-glow);transition:box-shadow .2s}
+input[type=range]::-webkit-slider-thumb:hover{box-shadow:0 0 0 6px rgba(255,159,28,.2)}
+
+.switch{position:relative;width:42px;height:24px;border-radius:var(--r);background:var(--surf-2);
+  border:1px solid var(--line);cursor:pointer;flex-shrink:0;transition:all .2s}
+.switch::after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:1px;
+  background:var(--txt-3);transition:all .2s}
+.switch.on{background:var(--amber-dim);border-color:var(--amber-line)}
+.switch.on::after{transform:translateX(18px);background:var(--amber);box-shadow:0 0 12px rgba(255,159,28,.6)}
+.tr{display:flex;align-items:flex-start;gap:13px}
+.tr .tt{display:flex;flex-direction:column;gap:2px}
+.tr .tt b{font-size:13.5px;color:var(--white);font-weight:600}
+.tr .tt span{font-size:12px;color:var(--txt-3)}
+
+.progress{height:5px;background:var(--black);border:1px solid var(--line);overflow:hidden}
+.progress .fill{height:100%;background:linear-gradient(90deg,var(--amber-hot),var(--amber-2));transition:width .35s;position:relative}
+.progress .fill::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.6),transparent);
+  animation:sh 1.7s ease-in-out infinite}
+@keyframes sh{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+.progress.done .fill{background:linear-gradient(90deg,#2f9c6e,var(--ok))}
+.progress.done .fill::after{display:none}
+.progress.ind .fill{width:30%!important;animation:sl 1.5s cubic-bezier(.4,0,.2,1) infinite}
+@keyframes sl{0%{margin-left:-30%}100%{margin-left:100%}}
+
+.steps{display:flex;gap:8px;flex-wrap:wrap}
+.step{display:flex;align-items:center;gap:9px;padding:10px 15px;font-family:var(--exp);font-size:11px;font-weight:700;
+  letter-spacing:.05em;text-transform:uppercase;color:var(--txt-3);background:var(--surf);border:1px solid var(--line);border-radius:var(--r);
+  transition:all .22s}
+.step .n{font-family:var(--m);font-size:10px;font-weight:400;opacity:.7}
+.step.active{color:#1a0f00;background:var(--amber);border-color:transparent;box-shadow:0 0 22px rgba(255,159,28,.35)}
+.step.done{color:var(--ok);border-color:rgba(95,211,154,.3)}
+
+.field{width:100%;padding:12px 14px;border-radius:var(--r);background:var(--black);border:1px solid var(--line);
+  color:var(--white);font-family:var(--m);font-size:12.5px;transition:border-color .2s,box-shadow .2s}
+.field::placeholder{color:var(--txt-3)}
+.field:focus{outline:none;border-color:var(--amber-line);box-shadow:0 0 0 3px rgba(255,159,28,.1)}
+
+.drop{display:flex;flex-direction:column;align-items:center;text-align:center;gap:9px;padding:48px 24px;
+  border:1px dashed var(--line);border-radius:var(--r-lg);cursor:pointer;background:var(--surf);transition:all .25s}
+.drop:hover{border-color:var(--amber-line);border-style:solid;background:linear-gradient(180deg,var(--amber-dim),var(--surf))}
+.drop svg{width:30px;height:30px;color:var(--amber)}
+.drop h4{font-family:var(--exp);font-size:16px;font-weight:700;color:var(--white);text-transform:uppercase;letter-spacing:.02em}
+.drop p{font-size:12.5px;color:var(--txt-3)}
+
+.stat{display:flex;flex-direction:column;gap:2px}
+.stat b{font-family:var(--exp);font-size:34px;font-weight:800;color:var(--white);line-height:1;letter-spacing:-.01em}
+.stat b em{font-size:15px;color:var(--txt-3);font-style:normal;font-weight:500}
+.stat span{font-family:var(--m);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--txt-3)}
+
+.frame{border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--line);background:#000;position:relative}
+.frame img{display:block;width:100%}
+.frame .hint{position:absolute;left:12px;bottom:12px;padding:6px 12px;border-radius:var(--r);
+  font-family:var(--m);font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;
+  background:rgba(8,9,12,.82);border:1px solid var(--amber-line);color:var(--amber-2);backdrop-filter:blur(8px)}
+
+.skel{height:13px;border-radius:var(--r);background:linear-gradient(90deg,var(--surf-2) 25%,var(--surf-3) 37%,var(--surf-2) 63%);
+  background-size:400% 100%;animation:sk 1.5s ease infinite}
+@keyframes sk{0%{background-position:100% 0}100%{background-position:0 0}}
+
+.footer{margin-top:60px;padding-top:24px;border-top:2px solid var(--line);display:flex;justify-content:space-between;
+  font-family:var(--m);font-size:10px;color:var(--txt-3);letter-spacing:.12em;text-transform:uppercase}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <div class="mark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+        <circle cx="12" cy="12" r="4"/><ellipse cx="12" cy="12" rx="10" ry="3.4" transform="rotate(-20 12 12)"/>
+        <path d="M3 20h18" opacity=".5"/>
+      </svg>
+    </div>
+    <div class="brand">
+      <h1>Hyperion Studio</h1>
+      <div class="s">Forge d'images astrales</div>
+    </div>
+    <div class="mono">EST. MMXXVI · v0.1</div>
+  </div>
+
+  <div class="hero">
+    <div class="kick">Empilement astro · RAW → TIFF 16 bits</div>
+    <h2>Le vacarme des poses<em>devient une image.</em></h2>
+    <p>Détection, crop, tri, alignement et empilement par blocs — entièrement automatiques.
+       De vos RAW à un TIFF 16 bits prêt pour le post-traitement.</p>
+  </div>
+
+  <section class="sec">
+    <h3>Palette · basalte</h3>
+    <div class="sws" style="margin-bottom:22px">
+      <div class="sw"><div class="chip" style="background:#08090c"></div><div class="m"><b>Carbone</b><span>#08090C</span></div></div>
+      <div class="sw"><div class="chip" style="background:#0b0c10"></div><div class="m"><b>Fond</b><span>#0B0C10</span></div></div>
+      <div class="sw"><div class="chip" style="background:#12141a"></div><div class="m"><b>Surface</b><span>#12141A</span></div></div>
+      <div class="sw"><div class="chip" style="background:#171a22"></div><div class="m"><b>Surface 2</b><span>#171A22</span></div></div>
+      <div class="sw"><div class="chip" style="background:#1e222c"></div><div class="m"><b>Surface 3</b><span>#1E222C</span></div></div>
+    </div>
+    <h3>Palette · incandescence</h3>
+    <div class="sws">
+      <div class="sw"><div class="chip" style="background:linear-gradient(100deg,#ffc266,#ff9f1c 55%,#ff7a00)"></div><div class="m"><b>Ambre</b><span>#FF9F1C → #FF7A00</span></div></div>
+      <div class="sw"><div class="chip" style="background:#ffc266"></div><div class="m"><b>Ambre clair</b><span>#FFC266</span></div></div>
+      <div class="sw"><div class="chip" style="background:#5fd39a"></div><div class="m"><b>Succès</b><span>#5FD39A</span></div></div>
+      <div class="sw"><div class="chip" style="background:#ff5f6d"></div><div class="m"><b>Erreur</b><span>#FF5F6D</span></div></div>
+      <div class="sw"><div class="chip" style="background:#f0ece4"></div><div class="m"><b>Blanc</b><span>#F0ECE4</span></div></div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <h3>Typographie</h3>
+    <div class="trow"><span class="tag">Archivo Expanded 800 · 40</span><span class="t-hero">Empiler <em>200 poses</em></span></div>
+    <div class="trow"><span class="tag">Archivo Expanded 800 · 26</span><span class="t-h1">Hyperion Studio</span></div>
+    <div class="trow"><span class="tag">Archivo 700 · 17</span><span class="t-h2">Résultat du stack</span></div>
+    <div class="trow"><span class="tag">Archivo 400 · 14</span><span class="t-body">Détection, crop, tri, alignement et empilement par blocs, entièrement automatiques.</span></div>
+    <div class="trow"><span class="tag">Archivo 400 · 12.5</span><span class="t-small">Le crop conserve toujours l'objet entier, avec une marge de noir.</span></div>
+    <div class="trow" style="border:none"><span class="tag">IBM Plex Mono 400</span><span class="mono">/Users/simon/Documents/Photo/lune 25 oct</span></div>
+  </section>
+
+  <section class="sec">
+    <h3>Boutons</h3>
+    <div class="stack">
+      <div class="row">
+        <button class="btn btn-p"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 4l14 8-14 8V4Z"/></svg>Lancer le traitement</button>
+        <button class="btn btn-s">Aperçu</button>
+        <button class="btn btn-g">Avancé</button>
+        <button class="btn btn-d">Annuler</button>
+        <button class="btn btn-s" disabled>Traitement…</button>
+      </div>
+      <div class="row">
+        <button class="btn btn-p btn-sm">Petit</button>
+        <button class="btn btn-s btn-sm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/></svg>Rafraîchir</button>
+        <button class="btn btn-g btn-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg></button>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <h3>Badges & puces</h3>
+    <div class="stack">
+      <div class="row">
+        <span class="badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/></svg>ILCE-6000</span>
+        <span class="badge">4024 × 4024</span>
+        <span class="badge b-ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>Objet détecté</span>
+        <span class="badge b-info">Cache prêt</span>
+        <span class="badge b-warn">Aucun objet</span>
+      </div>
+      <div class="row">
+        <button class="chip on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-3-6.7M21 3v6h-6"/></svg>90°</button>
+        <button class="chip">Miroir H</button><button class="chip">Miroir V</button>
+        <button class="chip on">Ondelettes</button><button class="chip">Brut</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <h3>Curseurs & interrupteurs</h3>
+    <div class="grid c2">
+      <div class="card">
+        <div class="stack" style="gap:22px">
+          <label class="slider"><div class="sh"><span>Netteté (ondelettes)</span><output>1.40</output></div>
+            <input type="range" min="0" max="3" step="0.05" value="1.4" style="--pct:47%"></label>
+          <label class="slider"><div class="sh"><span>Échelles d'ondelettes</span><output>4</output></div>
+            <input type="range" min="1" max="6" step="1" value="4" style="--pct:60%"></label>
+          <label class="slider"><div class="sh"><span>Frames conservées</span><output>25 %</output></div>
+            <input type="range" min="1" max="100" step="1" value="25" style="--pct:25%"></label>
+        </div>
+      </div>
+      <div class="card">
+        <div class="stack" style="gap:20px">
+          <div class="tr"><span class="switch on"></span><div class="tt"><b>Aligner les frames</b><span>Corrige la dérive et la rotation de champ.</span></div></div>
+          <div class="tr"><span class="switch on"></span><div class="tt"><b>Pondérer par la qualité</b><span>Donne plus de poids aux poses nettes.</span></div></div>
+          <div class="tr"><span class="switch"></span><div class="tt"><b>Points d'alignement locaux</b><span>Expérimental — dégrade l'image.</span></div></div>
+          <div><div class="lbl">Nom de sortie</div><input class="field" value="lune_stack"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <h3>Étapes & progression</h3>
+    <div class="card stack">
+      <div class="steps">
+        <div class="step done"><span class="n">01</span>Import RAW</div>
+        <div class="step done"><span class="n">02</span>Analyse</div>
+        <div class="step active"><span class="n">03</span>Empilement</div>
+        <div class="step"><span class="n">04</span>Post-traitement</div>
+        <div class="step"><span class="n">05</span>Export</div>
+      </div>
+      <div class="progress"><div class="fill" style="width:58%"></div></div>
+      <div class="row" style="justify-content:space-between">
+        <span style="font-size:12.5px;color:var(--txt-2)">Empilement des blocs — 116/200</span>
+        <span class="mono">2 min 14 s · ~1 min 42 s restant</span>
+      </div>
+      <div class="progress done"><div class="fill" style="width:100%"></div></div>
+      <div class="progress ind"><div class="fill"></div></div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <h3>Cartes & dépôt</h3>
+    <div class="grid c2">
+      <div class="card">
+        <div class="ct">Dossier sélectionné</div>
+        <div class="cs mono">/Users/simon/Documents/Photo/lune 25 oct</div>
+        <div class="row" style="margin-top:14px"><span class="badge b-ok">428 images</span><span class="badge b-info">Cache prêt</span></div>
+      </div>
+      <div class="drop">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg>
+        <h4>Choisir un dossier d'images</h4><p>RAW (ARW, NEF, CR2…) ou TIFF 16 bits déjà convertis</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <h3>Résultat</h3>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap">
+        <div>
+          <div class="ct" style="color:var(--ok);display:flex;align-items:center;gap:8px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="width:17px;height:17px"><path d="M20 6 9 17l-5-5"/></svg>Stack terminé
+          </div>
+          <div class="cs mono" style="margin-top:4px">…/hyperion_out/lune 25 oct_stack.tif</div>
+        </div>
+        <div class="row">
+          <button class="btn btn-g btn-sm">Aperçu</button>
+          <button class="btn btn-g btn-sm">Enregistrer sous</button>
+          <button class="btn btn-s btn-sm">Ouvrir le dossier</button>
+        </div>
+      </div>
+      <div class="row" style="gap:46px;margin:28px 0 22px">
+        <div class="stat"><b>200<em>/200</em></b><span>frames empilées</span></div>
+        <div class="stat"><b>26</b><span>qualité moyenne</span></div>
+        <div class="stat"><b>3620<em>²</em></b><span>taille du crop</span></div>
+      </div>
+      <div class="frame">
+        <img alt="Aperçu" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='820' height='420'><defs><radialGradient id='s' cx='50%25' cy='50%25'><stop offset='0%25' stop-color='%231a1408'/><stop offset='100%25' stop-color='%2308090c'/></radialGradient><radialGradient id='m' cx='46%25' cy='38%25'><stop offset='0%25' stop-color='%23f5e9d2'/><stop offset='62%25' stop-color='%23b3a184'/><stop offset='100%25' stop-color='%234c4234'/></radialGradient></defs><rect width='820' height='420' fill='url(%23s)'/><circle cx='410' cy='212' r='150' fill='url(%23m)'/><circle cx='370' cy='182' r='25' fill='%23d6c5a5' opacity='.5'/><circle cx='462' cy='240' r='16' fill='%23cdbb9b' opacity='.45'/><circle cx='410' cy='122' r='11' fill='%23e2d3b5' opacity='.42'/><g fill='%23ffd9a0'><circle cx='96' cy='64' r='1.2' opacity='.7'/><circle cx='710' cy='96' r='1' opacity='.5'/><circle cx='158' cy='344' r='1' opacity='.45'/><circle cx='672' cy='348' r='1.3' opacity='.6'/></g></svg>">
+        <span class="hint">Cliquez pour inspecter à 100 %</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <h3>Chargement</h3>
+    <div class="card stack" style="max-width:420px">
+      <div class="skel" style="width:60%"></div>
+      <div class="skel" style="width:90%"></div>
+      <div class="skel" style="width:75%"></div>
+    </div>
+  </section>
+
+  <div class="footer"><span>Hyperion Studio</span><span>Direction artistique nº 3 · Titan</span></div>
+</div>
+</body>
+</html>

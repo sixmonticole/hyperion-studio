@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<title>Hyperion Studio — Logo : orbite ou S</title>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;0,600;0,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ============================================================================
+   LOGO H + TRAIT — deux lectures, en version claire ET sombre.
+   On reprend la composition de ton dessin : H italique plein à gauche,
+   astre doré à droite, trait continu qui traverse le disque en diagonale
+   puis forme une boucle basse.
+   ============================================================================ */
+:root{
+  --ink:#0a0d16; --card:#121728; --line:#232b42;
+  --paper:#ece7dc; --text-3:#837f74;
+  --gold:#d8a657; --gold-2:#f0cf8a; --gold-line:rgba(216,166,87,.4);
+  --serif:'Spectral',Georgia,serif; --sans:'Inter',system-ui,sans-serif; --mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--ink);color:var(--text-3);font-size:14px;line-height:1.6;
+  -webkit-font-smoothing:antialiased;padding:52px 32px 110px;
+  background-image:radial-gradient(900px 480px at 84% -8%,rgba(216,166,87,.09),transparent 60%),
+                   radial-gradient(760px 460px at 4% 4%,rgba(90,120,200,.08),transparent 58%)}
+.wrap{max-width:1100px;margin:0 auto}
+h1{font-family:var(--serif);font-size:34px;font-weight:600;color:var(--paper);margin-bottom:10px}
+.lead{color:var(--text-3);max-width:740px;margin-bottom:20px;font-size:15px}
+.hint{border-left:2px solid var(--gold-line);padding-left:16px;margin-bottom:48px;
+  font-family:var(--mono);font-size:11.5px;line-height:1.9;color:var(--text-3)}
+.hint b{color:var(--gold-2);font-weight:500}
+
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-bottom:52px}
+@media(max-width:840px){.compare{grid-template-columns:1fr}}
+
+.opt{border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--card)}
+.opt-head{padding:20px 26px;border-bottom:1px solid var(--line)}
+.opt-tag{font-family:var(--mono);font-size:10.5px;color:var(--gold);letter-spacing:.2em}
+.opt-head h2{font-family:var(--serif);font-size:21px;font-weight:600;color:var(--paper);margin-top:4px}
+.opt-head p{font-size:12.5px;color:var(--text-3);margin-top:6px}
+
+/* Deux fonds de test par option : sombre puis clair */
+.opt-canvas{display:grid;place-items:center;padding:34px;background:#0a0d16;border-bottom:1px solid var(--line)}
+.opt-canvas.on-light{background:#f6f3ec}
+.opt-canvas svg{width:210px;height:210px}
+.canvas-cap{font-family:var(--mono);font-size:9.5px;text-align:center;letter-spacing:.1em;
+  text-transform:uppercase;margin-top:12px;display:block}
+.opt-canvas .canvas-cap{color:#7d8ba5}
+.opt-canvas.on-light .canvas-cap{color:#a09a8c}
+
+.opt-body{padding:22px 26px;display:flex;flex-direction:column;gap:12px}
+.opt-body p{font-size:13px;color:var(--text-3);line-height:1.65}
+.opt-body p b{color:var(--paper);font-weight:600}
+.opt-body .sym{font-family:var(--mono);font-size:11.5px;color:var(--text-3);line-height:1.9}
+.opt-body .sym b{color:var(--gold-2);font-weight:500}
+
+.scale-row{display:flex;align-items:flex-end;gap:22px;padding:20px 26px;border-top:1px solid var(--line)}
+.scale-row .s24 svg{width:24px;height:24px}
+.scale-row .s40 svg{width:40px;height:40px}
+.scale-row .s72 svg{width:72px;height:72px}
+.scale-row .cap{font-family:var(--mono);font-size:9.5px;color:var(--text-3);text-align:center;display:block;margin-top:6px}
+
+h3.sec{font-family:var(--serif);font-size:19px;font-weight:600;color:var(--paper);margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.lockups{border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.lockup{display:flex;align-items:center;gap:16px;padding:24px 30px;border-bottom:1px solid var(--line)}
+.lockup:last-child{border-bottom:none}
+.lockup.light{background:#f6f3ec}
+.lockup .markwrap{width:56px;height:56px;flex-shrink:0}
+.lockup svg{width:100%;height:100%}
+.lockup .txt b{font-family:var(--serif);font-size:22px;font-weight:600;color:var(--paper);display:block;line-height:1.1}
+.lockup.light .txt b{color:#1c1a15}
+.lockup .txt span{font-size:10.5px;letter-spacing:.28em;text-transform:uppercase;color:var(--gold)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Le logo : orbite ou S ?</h1>
+  <p class="lead">Deux lectures du même geste. Sur chaque option, le logo est montré sur fond sombre
+     ET sur fond clair, pour vérifier qu'il tient dans les deux thèmes de l'app.</p>
+  <p class="hint">CORRECTION — la planche précédente montrait un H noir invisible sur fond sombre :
+     c'était un défaut d'affichage de ma part. Ici, le H prend la couleur du fond inverse (clair sur
+     sombre, sombre sur clair) comme il le fera dans l'app.</p>
+
+  <div class="compare">
+
+    <!-- ================= V1 : L'ORBITE ================= -->
+    <div class="opt">
+      <div class="opt-head">
+        <div class="opt-tag">VERSION 1</div>
+        <h2>L'orbite</h2>
+        <p>Le trait est une trajectoire. Aucune lettre à lire.</p>
+      </div>
+
+      <div class="opt-canvas">
+        <svg viewBox="0 0 200 200" fill="none">
+          <!-- Trait continu qui relie H et astre -->
+          <path d="M52 74
+                   C 96 60, 150 66, 168 96
+                   C 182 120, 162 140, 132 144
+                   C 108 147, 88 138, 84 120
+                   C 80 102, 100 92, 122 96
+                   C 148 101, 158 124, 144 146
+                   C 130 168, 96 180, 66 172
+                   C 42 166, 34 146, 42 128"
+                stroke="#0a0d16" stroke-width="3.6" stroke-linecap="round"/>
+          <!-- Astre dore -->
+          <circle cx="126" cy="118" r="38" fill="#f0b95c"/>
+          <!-- trait repasse devant le disque en diagonale -->
+          <path d="M84 120 C 100 108, 140 112, 166 132"
+                stroke="#0a0d16" stroke-width="3.6" stroke-linecap="round"/>
+          <!-- H italique plein, en clair -->
+          <path d="M52 34 L40 86 L54 86 L66 34 Z" fill="#ece7dc"/>
+          <path d="M88 34 L76 86 L90 86 L102 34 Z" fill="#ece7dc"/>
+          <path d="M56 54 L88 54 L86 64 L54 64 Z" fill="#ece7dc"/>
+        </svg>
+        <span class="canvas-cap">fond sombre</span>
+      </div>
+
+      <div class="opt-canvas on-light">
+        <svg viewBox="0 0 200 200" fill="none">
+          <path d="M52 74 C 96 60, 150 66, 168 96 C 182 120, 162 140, 132 144 C 108 147, 88 138, 84 120 C 80 102, 100 92, 122 96 C 148 101, 158 124, 144 146 C 130 168, 96 180, 66 172 C 42 166, 34 146, 42 128" stroke="#1c1a15" stroke-width="3.6" stroke-linecap="round"/>
+          <circle cx="126" cy="118" r="38" fill="#f0b95c"/>
+          <path d="M84 120 C 100 108, 140 112, 166 132" stroke="#1c1a15" stroke-width="3.6" stroke-linecap="round"/>
+          <path d="M52 34 L40 86 L54 86 L66 34 Z" fill="#1c1a15"/>
+          <path d="M88 34 L76 86 L90 86 L102 34 Z" fill="#1c1a15"/>
+          <path d="M56 54 L88 54 L86 64 L54 64 Z" fill="#1c1a15"/>
+        </svg>
+        <span class="canvas-cap">fond clair</span>
+      </div>
+
+      <div class="opt-body">
+        <p><b>Le trait est une trajectoire pure.</b> On ne cherche pas à lire une lettre : la ligne est
+           l'orbite d'un corps autour de l'astre. Plus abstrait, plus « instrument », et aucune
+           ambiguïté de lecture.</p>
+        <div class="sym">
+          Lecture : <b>H + orbite</b><br>
+          Le trait : <b>trajectoire continue</b><br>
+          Avantage : jamais de confusion
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= V2 : LE S LISIBLE ================= -->
+    <div class="opt">
+      <div class="opt-head">
+        <div class="opt-tag">VERSION 2</div>
+        <h2>Le S lisible</h2>
+        <p>La même ligne unique dessine un S.</p>
+      </div>
+
+      <div class="opt-canvas">
+        <svg viewBox="0 0 200 200" fill="none">
+          <!-- Astre d'ore -->
+          <circle cx="128" cy="116" r="38" fill="#f0b95c"/>
+          <!-- S calligraphique a grande amplitude, trace sur toute la hauteur -->
+          <path d="M150 36
+                   C 108 30, 74 44, 72 66
+                   C 70 86, 104 90, 130 98
+                   C 156 106, 160 130, 138 150
+                   C 116 170, 72 168, 54 152
+                   C 40 139, 46 120, 66 116"
+                stroke="#0a0d16" stroke-width="3.6" stroke-linecap="round"/>
+          <!-- trait qui repasse sur le disque -->
+          <path d="M130 98 C 156 106, 160 130, 138 150"
+                stroke="#0a0d16" stroke-width="3.6" stroke-linecap="round" stroke-opacity=".9"/>
+          <!-- H italique plein, en clair -->
+          <path d="M52 34 L40 86 L54 86 L66 34 Z" fill="#ece7dc"/>
+          <path d="M88 34 L76 86 L90 86 L102 34 Z" fill="#ece7dc"/>
+          <path d="M56 54 L88 54 L86 64 L54 64 Z" fill="#ece7dc"/>
+        </svg>
+        <span class="canvas-cap">fond sombre</span>
+      </div>
+
+      <div class="opt-canvas on-light">
+        <svg viewBox="0 0 200 200" fill="none">
+          <circle cx="128" cy="116" r="38" fill="#f0b95c"/>
+          <path d="M150 36 C 108 30, 74 44, 72 66 C 70 86, 104 90, 130 98 C 156 106, 160 130, 138 150 C 116 170, 72 168, 54 152 C 40 139, 46 120, 66 116" stroke="#1c1a15" stroke-width="3.6" stroke-linecap="round"/>
+          <path d="M130 98 C 156 106, 160 130, 138 150" stroke="#1c1a15" stroke-width="3.6" stroke-linecap="round"/>
+          <path d="M52 34 L40 86 L54 86 L66 34 Z" fill="#1c1a15"/>
+          <path d="M88 34 L76 86 L90 86 L102 34 Z" fill="#1c1a15"/>
+          <path d="M56 54 L88 54 L86 64 L54 64 Z" fill="#1c1a15"/>
+        </svg>
+        <span class="canvas-cap">fond clair</span>
+      </div>
+
+      <div class="opt-body">
+        <p><b>Le trait dessine un S.</b> Il part du haut, descend, se replie sur le disque et se referme
+           en bas : la lettre S se lit dans le mouvement. Le geste reste unique, mais l'intention est
+           explicite — comme dans un monogramme de société savante.</p>
+        <div class="sym">
+          Lecture : <b>H + S</b>, les deux initiales<br>
+          Le trait : <b>un S calligraphique</b><br>
+          Avantage : le nom complet est là
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <h3 class="sec">Dans l'en-tête de l'app</h3>
+  <div class="lockups">
+    <div class="lockup">
+      <div class="markwrap">
+        <svg viewBox="0 0 200 200" fill="none">
+          <path d="M52 74 C 96 60, 150 66, 168 96 C 182 120, 162 140, 132 144 C 108 147, 88 138, 84 120 C 80 102, 100 92, 122 96 C 148 101, 158 124, 144 146 C 130 168, 96 180, 66 172 C 42 166, 34 146, 42 128" stroke="#d8a657" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="126" cy="118" r="38" fill="#f0b95c"/>
+          <path d="M84 120 C 100 108, 140 112, 166 132" stroke="#0a0d16" stroke-width="4" stroke-linecap="round"/>
+          <path d="M52 34 L40 86 L54 86 L66 34 Z M88 34 L76 86 L90 86 L102 34 Z M56 54 L88 54 L86 64 L54 64 Z" fill="#ece7dc"/>
+        </svg>
+      </div>
+      <div class="txt"><b>Hyperion Studio</b><span>Observatoire · Empilement astro</span></div>
+    </div>
+    <div class="lockup light">
+      <div class="markwrap">
+        <svg viewBox="0 0 200 200" fill="none">
+          <path d="M52 74 C 96 60, 150 66, 168 96 C 182 120, 162 140, 132 144 C 108 147, 88 138, 84 120 C 80 102, 100 92, 122 96 C 148 101, 158 124, 144 146 C 130 168, 96 180, 66 172 C 42 166, 34 146, 42 128" stroke="#8a5f1d" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="126" cy="118" r="38" fill="#f0b95c"/>
+          <path d="M84 120 C 100 108, 140 112, 166 132" stroke="#1c1a15" stroke-width="4" stroke-linecap="round"/>
+          <path d="M52 34 L40 86 L54 86 L66 34 Z M88 34 L76 86 L90 86 L102 34 Z M56 54 L88 54 L86 64 L54 64 Z" fill="#1c1a15"/>
+        </svg>
+      </div>
+      <div class="txt"><b>Hyperion Studio</b><span>Observatoire · Empilement astro</span></div>
+    </div>
+    <div class="lockup">
+      <div class="markwrap">
+        <svg viewBox="0 0 200 200" fill="none">
+          <circle cx="128" cy="116" r="38" fill="#f0b95c"/>
+          <path d="M150 36 C 108 30, 74 44, 72 66 C 70 86, 104 90, 130 98 C 156 106, 160 130, 138 150 C 116 170, 72 168, 54 152 C 40 139, 46 120, 66 116" stroke="#d8a657" stroke-width="4" stroke-linecap="round"/>
+          <path d="M130 98 C 156 106, 160 130, 138 150" stroke="#0a0d16" stroke-width="4" stroke-linecap="round"/>
+          <path d="M52 34 L40 86 L54 86 L66 34 Z M88 34 L76 86 L90 86 L102 34 Z M56 54 L88 54 L86 64 L54 64 Z" fill="#ece7dc"/>
+        </svg>
+      </div>
+      <div class="txt"><b>Hyperion Studio</b><span>Observatoire · Empilement astro</span></div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

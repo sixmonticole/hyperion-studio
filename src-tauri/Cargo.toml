@@ -1,0 +1,167 @@
+[package]
+name = "hyperion-studio"
+version = "0.1.0"
+description = "Pipeline de traitement d'astrophotographie planetaire (remplacant PIPP + AutoStakkert)"
+authors = ["you"]
+edition = "2024"
+default-run = "hyperion-studio"
+
+[lib]
+name = "hyperion_studio_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+# Outils de developpement (validation et benchmark), compiles uniquement avec
+# `--features devtools`, pour ne pas alourdir le build de l'application.
+[[bin]]
+name = "probe"
+path = "src/bin/probe.rs"
+required-features = ["devtools"]
+
+[[bin]]
+name = "preview"
+path = "src/bin/preview.rs"
+required-features = ["devtools"]
+
+[[bin]]
+name = "detect"
+path = "src/bin/detect.rs"
+required-features = ["devtools"]
+
+[[bin]]
+name = "runtest"
+path = "src/bin/runtest.rs"
+required-features = ["devtools"]
+
+[[bin]]
+name = "bench"
+path = "src/bin/bench.rs"
+required-features = ["devtools"]
+
+[[bin]]
+name = "crop_preview"
+path = "src/bin/crop_preview.rs"
+required-features = ["devtools"]
+
+[[bin]]
+name = "meta"
+path = "src/bin/meta.rs"
+required-features = ["devtools"]
+
+[[bin]]
+name = "enhance_test"
+path = "src/bin/enhance_test.rs"
+required-features = ["devtools"]
+
+[[bin]]
+name = "diag_align"
+path = "src/bin/diag_align.rs"
+required-features = ["devtools"]
+
+[[bin]]
+name = "diag_rotation"
+path = "src/bin/diag_rotation.rs"
+required-features = ["devtools"]
+
+[[bin]]
+name = "diag_similarity"
+path = "src/bin/diag_similarity.rs"
+required-features = ["devtools"]
+
+[[bin]]
+name = "profile_session"
+path = "src/bin/profile_session.rs"
+required-features = ["devtools"]
+
+[[bin]]
+name = "compare_sharp"
+path = "src/bin/compare_sharp.rs"
+required-features = ["devtools"]
+
+[[bin]]
+name = "test_stack_noshift"
+path = "src/bin/test_stack_noshift.rs"
+required-features = ["devtools"]
+
+[[bin]]
+name = "diag_pair"
+path = "src/bin/diag_pair.rs"
+required-features = ["devtools"]
+
+[[bin]]
+name = "diag_local"
+path = "src/bin/diag_local.rs"
+required-features = ["devtools"]
+
+[[bin]]
+name = "pipeline_steps"
+path = "src/bin/pipeline_steps.rs"
+required-features = ["devtools"]
+
+[[bin]]
+name = "diag_chain"
+path = "src/bin/diag_chain.rs"
+required-features = ["devtools"]
+
+[[bin]]
+name = "runtest_blocks"
+path = "src/bin/runtest_blocks.rs"
+required-features = ["devtools"]
+
+[[bin]]
+name = "analyze_levels"
+path = "src/bin/analyze_levels.rs"
+required-features = ["devtools"]
+
+[features]
+devtools = []
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+tauri-plugin-opener = "2"
+serde = { version = "1", features = ["derive"] }
+base64 = "0.22"
+serde_json = "1"
+
+# Decodage RAW (ARW Sony, etc.)
+rawler = "0.8"
+
+# Ecriture / lecture TIFF 16-bit
+tiff = "0.11"
+
+# Traitement d'image et buffers
+image = { version = "0.25", default-features = false, features = ["png"] }
+ndarray = "0.16"
+rustfft = "6"
+
+# Parallelisation multi-coeur
+rayon = "1"
+
+# Memory-mapping pour les fichiers de cache
+memmap2 = "0.9"
+
+# Erreurs
+anyhow = "1"
+thiserror = "2"
+
+# Divers
+num_cpus = "1"
+walkdir = "2"
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 3
+panic = "abort"
+strip = true
+
+# Les crates de traitement d'image en release doivent etre rapides, meme en dev.
+[profile.dev.package.rawler]
+opt-level = 3
+[profile.dev.package.image]
+opt-level = 3
+[profile.dev.package.rustfft]
+opt-level = 3

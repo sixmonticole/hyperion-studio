@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<title>Hyperion Studio — Monogramme H+S</title>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;0,600;0,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ============================================================================
+   MONOGRAMME H + S + ORBITE — six constructions.
+   Contrainte : les deux lettres doivent rester lisibles, et l'anneau doit
+   se lire comme une orbite sans casser les lettres.
+   ============================================================================ */
+:root{
+  --ink:#0a0d16; --card:#121728; --card-2:#171d31; --line:#232b42;
+  --paper:#ece7dc; --text-2:#b9b4a8; --text-3:#837f74;
+  --gold:#d8a657; --gold-2:#f0cf8a; --gold-line:rgba(216,166,87,.4); --gold-dim:rgba(216,166,87,.12);
+  --serif:'Spectral',Georgia,serif; --sans:'Inter',system-ui,sans-serif; --mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--ink);color:var(--text-2);font-size:14px;line-height:1.6;
+  -webkit-font-smoothing:antialiased;padding:52px 32px 110px;
+  background-image:radial-gradient(900px 480px at 84% -8%,rgba(216,166,87,.09),transparent 60%),
+                   radial-gradient(760px 460px at 4% 4%,rgba(90,120,200,.08),transparent 58%)}
+.wrap{max-width:1120px;margin:0 auto}
+h1{font-family:var(--serif);font-size:34px;font-weight:600;color:var(--paper);margin-bottom:10px}
+.lead{color:var(--text-3);max-width:720px;margin-bottom:52px;font-size:15px}
+
+.band{margin-bottom:56px}
+.band-head{display:flex;align-items:baseline;gap:14px;padding-bottom:16px;border-bottom:1px solid var(--line);margin-bottom:8px}
+.band-tag{font-family:var(--mono);font-size:11px;color:var(--gold);letter-spacing:.2em}
+.band h2{font-family:var(--serif);font-size:22px;font-weight:600;color:var(--paper)}
+.band .why{color:var(--text-3);font-size:13.5px;margin:16px 0 26px;max-width:780px}
+.band .why b{color:var(--paper);font-weight:600}
+.band .why i{color:var(--gold-2);font-style:italic}
+
+.showcase{display:grid;grid-template-columns:300px 1fr;gap:0;
+  border:1px solid var(--line);border-radius:6px;overflow:hidden}
+@media(max-width:800px){.showcase{grid-template-columns:1fr}}
+.mark-cell{display:grid;place-items:center;padding:40px;background:var(--card);border-right:1px solid var(--line)}
+.mark-cell svg{width:150px;height:150px;color:var(--gold)}
+.info-cell{padding:28px 30px;display:flex;flex-direction:column;gap:14px;justify-content:center}
+.info-cell h4{font-family:var(--serif);font-size:18px;color:var(--paper);font-weight:600}
+.info-cell p{font-size:13px;color:var(--text-3);line-height:1.65}
+.info-cell .sym{font-family:var(--mono);font-size:11.5px;color:var(--text-3);line-height:1.9}
+.info-cell .sym b{color:var(--gold-2);font-weight:500}
+
+/* Test d'échelle inline dans chaque bandeau */
+.scale{display:flex;align-items:center;gap:22px;margin-top:18px;padding-top:18px;border-top:1px solid var(--line)}
+.scale svg{color:var(--gold)}
+.scale .s16 svg{width:16px;height:16px}
+.scale .s24 svg{width:24px;height:24px}
+.scale .s40 svg{width:40px;height:40px}
+.scale .cap{font-family:var(--mono);font-size:9.5px;color:var(--text-3);text-align:center;display:block;margin-top:5px}
+
+/* Lockup final */
+.lockups{display:grid;gap:0;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.lockup{display:flex;align-items:center;gap:16px;padding:26px 30px;border-bottom:1px solid var(--line)}
+.lockup:last-child{border-bottom:none}
+.lockup svg{width:54px;height:54px;color:var(--gold);flex-shrink:0}
+.lockup .txt b{font-family:var(--serif);font-size:22px;font-weight:600;color:var(--paper);display:block;line-height:1.1}
+.lockup .txt span{font-size:10.5px;letter-spacing:.28em;text-transform:uppercase;color:var(--gold)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Le monogramme H + S</h1>
+  <p class="lead">Six façons d'associer le H et le S d'Hyperion Studio autour d'une orbite, à l'esprit
+     des monogrammes de sociétés savantes. On cherche l'équilibre : les deux lettres lisibles,
+     l'orbite qui traverse sans les casser, et une forme nette même à 16 px.</p>
+
+  <!-- ==================== A · S DANS LE H ==================== -->
+  <section class="band">
+    <div class="band-head"><span class="band-tag">PISTE A</span><h2>Le S logé dans le H</h2></div>
+    <p class="why">Le plus compact et le plus lisible : <b>le S occupe l'espace intérieur du H</b>,
+      exactement comme un corps céleste dans sa cage instrumentale. Le gyroscope passe derrière, incliné
+      à 23,5°, et touche à peine les montants. À 16 px, on lit d'abord un H contenant une forme —
+      c'est le meilleur compromis de tous les essais.</p>
+    <div class="showcase">
+      <div class="mark-cell">
+        <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <!-- orbite derriere -->
+          <ellipse cx="50" cy="50" rx="45" ry="16" transform="rotate(-23.5 50 50)" stroke-width="1.8" stroke-opacity=".85"/>
+          <!-- H -->
+          <path d="M26 26 L26 74 M74 26 L74 74" stroke-width="4.4"/>
+          <!-- S dans la barre centrale -->
+          <path d="M64 39 C 64 34.5, 36 42, 36 47 C 36 52, 64 48, 64 53 C 64 58, 36 65.5, 36 61"
+                stroke-width="3.4"/>
+        </svg>
+      </div>
+      <div class="info-cell">
+        <h4>Le S logé dans le H</h4>
+        <p>Le S prend la place de la barre transversale du H et se déploie dans le vide intérieur.
+           C'est le plus équilibré : aucune lettre n'écrase l'autre, la surface est bien remplie.</p>
+        <div class="sym">
+          Lecture : <b>H d'abord</b>, puis on découvre le S<br>
+          Orbite : <b>derrière</b>, inclinée 23,5°<br>
+          Risque : le S doit rester ouvert aux extrémités
+        </div>
+        <div class="scale">
+          <div class="s16"><span class="cap">16</span>
+            <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <ellipse cx="50" cy="50" rx="45" ry="16" transform="rotate(-23.5 50 50)" stroke-width="4"/>
+              <path d="M26 26 L26 74 M74 26 L74 74" stroke-width="9"/>
+              <path d="M64 39 C 64 34.5, 36 42, 36 47 C 36 52, 64 48, 64 53 C 64 58, 36 65.5, 36 61" stroke-width="7"/>
+            </svg></div>
+          <div class="s24"><span class="cap">24</span>
+            <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <ellipse cx="50" cy="50" rx="45" ry="16" transform="rotate(-23.5 50 50)" stroke-width="3"/>
+              <path d="M26 26 L26 74 M74 26 L74 74" stroke-width="7"/>
+              <path d="M64 39 C 64 34.5, 36 42, 36 47 C 36 52, 64 48, 64 53 C 64 58, 36 65.5, 36 61" stroke-width="5"/>
+            </svg></div>
+          <div class="s40"><span class="cap">40</span>
+            <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <ellipse cx="50" cy="50" rx="45" ry="16" transform="rotate(-23.5 50 50)" stroke-width="2.2"/>
+              <path d="M26 26 L26 74 M74 26 L74 74" stroke-width="5"/>
+              <path d="M64 39 C 64 34.5, 36 42, 36 47 C 36 52, 64 48, 64 53 C 64 58, 36 65.5, 36 61" stroke-width="3.8"/>
+            </svg></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== B · S TRAVERSÉ PAR L'ORBITE ==================== -->
+  <section class="band">
+    <div class="band-head"><span class="band-tag">PISTE B</span><h2>Les deux lettres empilées</h2></div>
+    <p class="why">Le H et le S <b>l'un au-dessus de l'autre</b>, unis par les montants du H qui se
+      prolongent. Une seule orbite large enlace l'ensemble et devient le contenant : c'est le plus
+      « sceau » des essais. Malheureusement le plus chargé — il faudra choisir entre ce dessin et
+      la lisibilité en tout petit.</p>
+    <div class="showcase">
+      <div class="mark-cell">
+        <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <ellipse cx="50" cy="50" rx="46" ry="20" transform="rotate(-23.5 50 50)" stroke-width="1.8" stroke-opacity=".85"/>
+          <path d="M30 22 L30 52 M70 22 L70 52" stroke-width="4.2"/>
+          <path d="M30 37 L70 37" stroke-width="3.4" stroke-opacity=".9"/>
+          <path d="M62 60 C 62 56, 38 60, 38 66 C 38 72, 62 68, 62 74 C 62 80, 38 78, 38 82"
+                stroke-width="3.4"/>
+        </svg>
+      </div>
+      <div class="info-cell">
+        <h4>Les deux lettres empilées</h4>
+        <p>H en haut avec sa barre complète, S en dessous. Les deux lettres sont parfaitement lisibles
+           individuellement, mais l'ensemble devient haut et dense.</p>
+        <div class="sym">
+          Lecture : <b>H puis S</b>, sans ambiguïté<br>
+          Orbite : <b>enlace</b> les deux lettres<br>
+          Risque : trop chargé en dessous de 24 px
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== C · H ET S ENLAÇÉS ==================== -->
+  <section class="band">
+    <div class="band-head"><span class="band-tag">PISTE C</span><h2>Les deux lettres croisées</h2></div>
+    <p class="why">Un monogramme classique du XIXᵉ : <b>les lettres se chevauchent</b> et partagent des
+      traits. Le montant droit du H sert de colonne au S. Un seul anneau fin passe derrière. Élégant,
+      très « luxe », mais l'entrelacement demande de l'attention pour se décoder.</p>
+    <div class="showcase">
+      <div class="mark-cell">
+        <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <ellipse cx="50" cy="50" rx="45" ry="17" transform="rotate(-23.5 50 50)" stroke-width="1.8" stroke-opacity=".8"/>
+          <path d="M28 24 L28 76" stroke-width="4.2"/>
+          <path d="M28 50 L58 50" stroke-width="3.6"/>
+          <path d="M58 24 L58 76" stroke-width="4.2"/>
+          <path d="M78 34 C 78 28, 58 32, 58 40 C 58 48, 78 52, 78 60 C 78 68, 58 72, 58 66"
+                stroke-width="3.6"/>
+        </svg>
+      </div>
+      <div class="info-cell">
+        <h4>Les deux lettres croisées</h4>
+        <p>H à gauche, S à droite, <b>partageant la même colonne</b> : le montant droit du H est aussi
+           l'attache du S. Un seul bloc, large et posé.</p>
+        <div class="sym">
+          Lecture : <b>les deux à la fois</b>, côte à côte<br>
+          Orbite : <b>derrière</b>, discrète<br>
+          Risque : le S peut se lire comme un 8
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== D · ORBITE EN S ==================== -->
+  <section class="band">
+    <div class="band-head"><span class="band-tag">PISTE D</span><h2>Le S fait l'orbite</h2></div>
+    <p class="why">La plus astucieuse : <b>le S lui-même est une trajectoire</b>, et une petite sphère
+      le parcourt. Le H se réduit à ses deux montants, que le S traverse. Très « moderne observatoire »,
+      mais la double lecture S/orbite peut prêter à confusion.</p>
+    <div class="showcase">
+      <div class="mark-cell">
+        <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M26 24 L26 76 M74 24 L74 76" stroke-width="4.4"/>
+          <!-- S qui sert d'orbite, trace plus fine -->
+          <path d="M66 33 C 66 24, 34 28, 34 42 C 34 56, 66 44, 66 58 C 66 72, 34 76, 34 67"
+                stroke-width="2.4" stroke-opacity=".95"/>
+          <!-- sphere sur la trajectoire -->
+          <circle cx="34" cy="42" r="4" fill="currentColor" stroke="none"/>
+          <!-- petite trainee -->
+          <path d="M66 58 C 72 60, 76 62, 82 62" stroke-width="2" stroke-opacity=".5"/>
+        </svg>
+      </div>
+      <div class="info-cell">
+        <h4>Le S fait l'orbite</h4>
+        <p>Le S est tracé comme une trajectoire, avec une sphère qui le parcourt. Le H en cadre.
+           La plus poétique et la plus « astro », mais la plus subtile à décoder.</p>
+        <div class="sym">
+          Lecture : <b>double sens</b> S / orbite<br>
+          Orbite : c'est <b>le S lui-même</b><br>
+          Risque : peut se lire comme un simple S
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== E · MONOGRAMME DANS L'ANNEAU ==================== -->
+  <section class="band">
+    <div class="band-head"><span class="band-tag">PISTE E</span><h2>Le sceau : lettres dans l'anneau</h2></div>
+    <p class="why">Un <b>cercle complet</b> avec les lettres H et S à l'intérieur, séparées par un point
+      ou un trait — le vrai sceau d'observatoire. L'anneau porte les initiales comme une monnaie antique.
+      Très fort en iconographie, un peu plus étroit horizontalement.</p>
+    <div class="showcase">
+      <div class="mark-cell">
+        <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="50" cy="50" r="42" stroke-width="2"/>
+          <circle cx="50" cy="50" r="38" stroke-width="1" stroke-opacity=".45"/>
+          <path d="M32 30 L32 70 M52 30 L52 70 M32 50 L52 50" stroke-width="4"/>
+          <path d="M76 38 C 76 32, 60 36, 60 43 C 60 50, 76 54, 76 61 C 76 68, 60 72, 60 66"
+                stroke-width="3.4"/>
+          <circle cx="56" cy="86" r="2.4" fill="currentColor" stroke="none"/>
+        </svg>
+      </div>
+      <div class="info-cell">
+        <h4>Le sceau : lettres dans l'anneau</h4>
+        <p>Le cercle de l'instrument contient les deux lettres. C'est le registre le plus noble —
+           sceau, médaille, tampon à cire. En revanche l'espace intérieur est étroit.</p>
+        <div class="sym">
+          Lecture : <b>H et S</b> dans un cercle<br>
+          Orbite : le <b>cercle extérieur</b><br>
+          Risque : serré horizontalement
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== F · S EN ANNEAU, H EN TRAVERS ==================== -->
+  <section class="band">
+    <div class="band-head"><span class="band-tag">PISTE F</span><h2>Le S en anneau</h2></div>
+    <p class="why">Variation de la piste A, plus fine : <b>le S est dessiné comme un cercle ouvert</b>
+      presque fermé, et le H le traverse de part en part. L'anneau naît naturellement du S, donc pas de
+      courbe étrangère. Très épuré, et le meilleur test en petite taille parmi les six.</p>
+    <div class="showcase">
+      <div class="mark-cell">
+        <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <!-- H entier, en premier plan -->
+          <path d="M28 24 L28 76 M72 24 L72 76 M28 50 L72 50" stroke-width="4.6"/>
+          <!-- S-anneau ouvert, qui vient se nouer au centre -->
+          <path d="M64 34 C 64 26, 44 30, 40 41 C 36 52, 52 54, 58 62 C 64 70, 52 76, 42 72"
+                stroke-width="3" stroke-opacity=".95"/>
+          <circle cx="84" cy="50" r="3.4" fill="currentColor" stroke="none"/>
+        </svg>
+      </div>
+      <div class="info-cell">
+        <h4>Le S en anneau</h4>
+        <p>Le H reste entier et dominant. Le S se love à l'intérieur en formant un anneau ouvert, et un
+           petit satellite doré marque le sens de la trajectoire.</p>
+        <div class="sym">
+          Lecture : <b>H dominant</b>, S en creux<br>
+          Orbite : <b>le S lui-même</b> + satellite<br>
+          Force : la plus nette en 16 px
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== LOCKUPS ==================== -->
+  <section class="band" style="margin-bottom:0">
+    <div class="band-head"><span class="band-tag">EN SITUATION</span><h2>Dans l'en-tête de l'app</h2></div>
+    <p class="why">Les trois constructions les plus lisibles, dans le lockup réel.</p>
+    <div class="lockups">
+      <div class="lockup">
+        <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <ellipse cx="50" cy="50" rx="45" ry="16" transform="rotate(-23.5 50 50)" stroke-width="2"/>
+          <path d="M26 26 L26 74 M74 26 L74 74" stroke-width="4.6"/>
+          <path d="M64 39 C 64 34.5, 36 42, 36 47 C 36 52, 64 48, 64 53 C 64 58, 36 65.5, 36 61" stroke-width="3.6"/>
+        </svg>
+        <div class="txt"><b>Hyperion Studio</b><span>Observatoire · Empilement astro</span></div>
+      </div>
+      <div class="lockup">
+        <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M28 24 L28 76 M72 24 L72 76 M28 50 L72 50" stroke-width="4.8"/>
+          <path d="M64 34 C 64 26, 44 30, 40 41 C 36 52, 52 54, 58 62 C 64 70, 52 76, 42 72" stroke-width="3.2"/>
+          <circle cx="84" cy="50" r="3.4" fill="currentColor" stroke="none"/>
+        </svg>
+        <div class="txt"><b>Hyperion Studio</b><span>Observatoire · Empilement astro</span></div>
+      </div>
+      <div class="lockup">
+        <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="50" cy="50" r="42" stroke-width="2.2"/>
+          <circle cx="50" cy="50" r="38" stroke-width="1" stroke-opacity=".45"/>
+          <path d="M32 30 L32 70 M52 30 L52 70 M32 50 L52 50" stroke-width="4.2"/>
+          <path d="M76 38 C 76 32, 60 36, 60 43 C 60 50, 76 54, 76 61 C 76 68, 60 72, 60 66" stroke-width="3.4"/>
+        </svg>
+        <div class="txt"><b>Hyperion Studio</b><span>Observatoire · Empilement astro</span></div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

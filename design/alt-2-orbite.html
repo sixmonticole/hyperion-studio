@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<title>Hyperion Studio — Orbite</title>
+<!--
+  DIRECTION 2 — « ORBITE »
+  ------------------------------------------------------------------
+  Univers : interface de bord, salle de contrôle, précision froide.
+  Typo  :  Space Grotesk (géométrique, techno, lettres larges)
+           Space Mono (données, index, mesures)
+  Palette : bleu nuit, cyan glacé, accents néon parcimonieux.
+  Signature : coins chanfreinés (cut corners), index monospace partout,
+              grille de visée, anneaux orbitaux animés.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --deep:   #05080f;
+  --bg:     #070b14;
+  --panel:  #0b111e;
+  --panel-2:#0e1524;
+  --panel-3:#131c2e;
+
+  --line:     #182338;
+  --line-2:   #22304a;
+
+  --txt:   #e4eeff;
+  --txt-2: #93a8c8;
+  --txt-3: #5d718f;
+  --txt-4: #3d4c66;
+
+  --cyan:      #22e0ee;
+  --cyan-dim:  rgba(34,224,238,.10);
+  --cyan-line: rgba(34,224,238,.34);
+  --cyan-glow: rgba(34,224,238,.45);
+  --blue:      #3b82f6;
+  --violet:    #8b5cf6;
+
+  --ok:#2ee6a8; --warn:#ffc247; --err:#ff5c78;
+
+  --g:'Space Grotesk', system-ui, sans-serif;
+  --m:'Space Mono', ui-monospace, monospace;
+  --r:0; /* chanfreins plutôt qu'arrondis */
+  /* clip-path chanfrein : coin haut-droit et bas-gauche coupés */
+  --cut:polygon(0 0, calc(100% - 11px) 0, 100% 11px, 100% 100%, 11px 100%, 0 calc(100% - 11px));
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:var(--g);background:var(--bg);color:var(--txt-2);
+  font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased;
+  position:relative;overflow-x:hidden;
+  background-image:
+    linear-gradient(rgba(34,224,238,.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34,224,238,.028) 1px, transparent 1px);
+  background-size:44px 44px;
+}
+body::before{
+  content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(800px 480px at 88% -6%, rgba(139,92,246,.14), transparent 62%),
+    radial-gradient(720px 440px at 4% 4%,  rgba(34,224,238,.12), transparent 58%),
+    radial-gradient(1000px 700px at 50% 130%, rgba(59,130,246,.08), transparent 60%);
+}
+
+.wrap{max-width:1180px;margin:0 auto;padding:38px 30px 110px}
+
+.top{display:flex;align-items:center;gap:18px;margin-bottom:56px;padding-bottom:20px;
+  border-bottom:1px solid var(--line);position:relative}
+.top::after{content:"";position:absolute;left:0;bottom:-1px;width:180px;height:1px;
+  background:linear-gradient(90deg,var(--cyan),transparent);box-shadow:0 0 12px var(--cyan-glow)}
+
+/* Marque : anneaux orbitaux animés */
+.mark{position:relative;width:54px;height:54px;flex-shrink:0;display:grid;place-items:center}
+.mark .core{width:16px;height:16px;border-radius:50%;
+  background:radial-gradient(circle at 34% 30%,#bff6fb,var(--cyan) 60%,#0a5b66);
+  box-shadow:0 0 18px var(--cyan-glow)}
+.mark .ring{position:absolute;inset:0;border:1px solid var(--cyan-line);border-radius:50%;
+  animation:spin 9s linear infinite}
+.mark .ring.r2{inset:7px;border-style:dashed;border-color:rgba(139,92,246,.4);animation-duration:6s;animation-direction:reverse}
+@keyframes spin{to{transform:rotate(360deg)}}
+.mark .dot{position:absolute;top:-2px;left:50%;width:4px;height:4px;border-radius:50%;background:var(--cyan);
+  box-shadow:0 0 8px var(--cyan-glow);transform:translateX(-50%)}
+
+.brand h1{font-size:20px;font-weight:700;letter-spacing:.02em;color:var(--txt);line-height:1}
+.brand h1 span{color:var(--cyan)}
+.brand .s{font-family:var(--m);font-size:10px;color:var(--txt-3);letter-spacing:.24em;margin-top:5px;text-transform:uppercase}
+.top .stat-line{margin-left:auto;display:flex;gap:22px;font-family:var(--m);font-size:10.5px;color:var(--txt-3);letter-spacing:.06em}
+.top .stat-line b{color:var(--cyan)}
+
+.hero{margin-bottom:60px;max-width:720px}
+.hero .kick{font-family:var(--m);font-size:10.5px;color:var(--cyan);letter-spacing:.3em;text-transform:uppercase;margin-bottom:14px}
+.hero h2{font-size:42px;font-weight:700;line-height:1.1;letter-spacing:-.02em;color:var(--txt)}
+.hero h2 span{background:linear-gradient(100deg,var(--cyan),var(--violet));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{margin-top:16px;color:var(--txt-3);font-size:15px}
+
+.sec{margin-bottom:64px}
+.sec > h3{font-family:var(--m);font-size:10.5px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--txt-3);margin-bottom:10px;display:flex;align-items:center;gap:10px}
+.sec > h3::before{content:"//";color:var(--cyan)}
+.sec > .bar{height:1px;background:linear-gradient(90deg,var(--line-2),transparent);margin-bottom:26px}
+
+.grid{display:grid;gap:18px}
+.c2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.c3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.c4{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:900px){.c2,.c3,.c4{grid-template-columns:1fr}}
+.row{display:flex;gap:11px;flex-wrap:wrap;align-items:center}
+.stack{display:flex;flex-direction:column;gap:16px}
+.lbl{font-family:var(--m);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--txt-4);margin-bottom:13px}
+
+.card{background:linear-gradient(160deg,var(--panel),var(--panel-2));border:1px solid var(--line);
+  clip-path:var(--cut);padding:24px;position:relative;transition:border-color .25s}
+.card::after{content:"";position:absolute;top:0;right:11px;width:34px;height:1px;background:var(--cyan)}
+.card:hover{border-color:var(--line-2)}
+.card .ct{font-size:16px;font-weight:600;color:var(--txt);margin-bottom:3px}
+.card .cs{font-size:12.5px;color:var(--txt-3)}
+
+.sws{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:11px}
+.sw{border:1px solid var(--line);background:var(--panel);clip-path:polygon(0 0,calc(100% - 9px) 0,100% 9px,100% 100%,0 100%)}
+.sw .chip{height:56px}
+.sw .m{padding:9px 11px;border-top:1px solid var(--line)}
+.sw .m b{display:block;font-size:12px;color:var(--txt);font-weight:600}
+.sw .m span{font-family:var(--m);font-size:10px;color:var(--txt-4)}
+
+.trow{display:flex;align-items:baseline;gap:18px;padding:15px 0;border-bottom:1px solid var(--line)}
+.trow .tag{font-family:var(--m);font-size:10px;color:var(--txt-4);min-width:170px}
+.t-hero{font-size:38px;font-weight:700;letter-spacing:-.025em;color:var(--txt)}
+.t-hero span{background:linear-gradient(100deg,var(--cyan),var(--violet));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.t-h1{font-size:25px;font-weight:600;color:var(--txt)}
+.t-h2{font-size:17px;font-weight:600;color:var(--txt)}
+.t-body{font-size:14px;color:var(--txt-2)}
+.t-small{font-size:12.5px;color:var(--txt-3)}
+.mono{font-family:var(--m);font-size:12px;color:var(--txt-3)}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;border:1px solid transparent;
+  padding:11px 20px;font-family:var(--g);font-size:13px;font-weight:600;letter-spacing:.02em;cursor:pointer;
+  white-space:nowrap;position:relative;overflow:hidden;transition:all .18s;
+  clip-path:polygon(0 0,calc(100% - 9px) 0,100% 9px,100% 100%,9px 100%,0 calc(100% - 9px));}
+.btn:active{transform:translateY(1px)}
+.btn svg{width:15px;height:15px}
+.btn-p{color:#03141a;background:linear-gradient(100deg,var(--cyan),#4ad8ff);box-shadow:0 0 22px rgba(34,224,238,.28)}
+.btn-p:hover{box-shadow:0 0 30px rgba(34,224,238,.5)}
+.btn-p::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 35%,rgba(255,255,255,.55),transparent 65%);
+  transform:translateX(-120%);transition:transform .45s}
+.btn-p:hover::after{transform:translateX(120%)}
+.btn-s{color:var(--txt);background:var(--panel-2);border-color:var(--line-2)}
+.btn-s:hover{border-color:var(--cyan-line);color:var(--cyan)}
+.btn-g{color:var(--txt-3);background:transparent;border-color:var(--line)}
+.btn-g:hover{color:var(--txt);border-color:var(--line-2)}
+.btn-d{color:var(--err);background:transparent;border-color:rgba(255,92,120,.3)}
+.btn-d:hover{background:rgba(255,92,120,.08)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-sm{padding:8px 14px;font-size:12px}
+.btn-ic{padding:10px;width:38px;height:38px}
+
+.badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;font-family:var(--m);font-size:10.5px;
+  background:var(--panel-2);border:1px solid var(--line);color:var(--txt-3);
+  clip-path:polygon(0 0,calc(100% - 6px) 0,100% 6px,100% 100%,0 100%)}
+.badge svg{width:11px;height:11px}
+.b-ok{color:var(--ok);border-color:rgba(46,230,168,.3);background:rgba(46,230,168,.06)}
+.b-warn{color:var(--warn);border-color:rgba(255,194,71,.3);background:rgba(255,194,71,.06)}
+.b-info{color:var(--cyan);border-color:var(--cyan-line);background:var(--cyan-dim)}
+
+.chip{padding:8px 15px;font-family:var(--m);font-size:11px;letter-spacing:.04em;
+  background:transparent;border:1px solid var(--line);color:var(--txt-3);cursor:pointer;
+  display:inline-flex;align-items:center;gap:7px;transition:all .18s;
+  clip-path:polygon(0 0,calc(100% - 7px) 0,100% 7px,100% 100%,7px 100%,0 calc(100% - 7px))}
+.chip svg{width:13px;height:13px}
+.chip:hover{color:var(--txt);border-color:var(--line-2)}
+.chip.on{color:var(--cyan);border-color:var(--cyan-line);background:var(--cyan-dim);box-shadow:0 0 0 1px rgba(34,224,238,.1) inset}
+
+.slider{display:flex;flex-direction:column;gap:9px}
+.slider .sh{display:flex;justify-content:space-between;align-items:baseline}
+.slider .sh span{font-size:13px;color:var(--txt-2)}
+.slider .sh output{font-family:var(--m);font-size:12px;color:var(--cyan);font-weight:700}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:3px;border-radius:0;outline:none;cursor:pointer;
+  background:linear-gradient(90deg,var(--cyan) 0%,var(--violet) var(--pct,40%),var(--line) var(--pct,40%),var(--line) 100%)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;background:var(--bg);
+  border:2px solid var(--cyan);box-shadow:0 0 0 0 var(--cyan-glow);transition:box-shadow .2s;transform:rotate(45deg)}
+input[type=range]::-webkit-slider-thumb:hover{box-shadow:0 0 0 5px rgba(34,224,238,.18)}
+
+.switch{position:relative;width:40px;height:22px;background:var(--panel-2);border:1px solid var(--line);
+  cursor:pointer;flex-shrink:0;transition:all .2s;clip-path:polygon(0 0,calc(100% - 6px) 0,100% 6px,100% 100%,6px 100%,0 calc(100% - 6px))}
+.switch::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;background:var(--txt-3);transition:all .22s}
+.switch.on{background:var(--cyan-dim);border-color:var(--cyan-line)}
+.switch.on::after{transform:translateX(16px);background:var(--cyan);box-shadow:0 0 10px var(--cyan-glow)}
+.tr{display:flex;align-items:flex-start;gap:13px}
+.tr .tt{display:flex;flex-direction:column;gap:2px}
+.tr .tt b{font-size:13.5px;color:var(--txt);font-weight:600}
+.tr .tt span{font-size:12px;color:var(--txt-3)}
+
+.progress{height:4px;background:var(--deep);border:1px solid var(--line);overflow:hidden;position:relative}
+.progress .fill{height:100%;background:linear-gradient(90deg,var(--cyan),var(--violet));transition:width .35s;position:relative}
+.progress .fill::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.6),transparent);
+  animation:sh 1.7s ease-in-out infinite}
+@keyframes sh{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+.progress.done .fill{background:linear-gradient(90deg,#12b98a,var(--ok))}
+.progress.done .fill::after{display:none}
+.progress.ind .fill{width:30%!important;animation:sl 1.5s cubic-bezier(.4,0,.2,1) infinite}
+@keyframes sl{0%{margin-left:-30%}100%{margin-left:100%}}
+
+.steps{display:flex;gap:8px;flex-wrap:wrap}
+.step{display:flex;align-items:center;gap:9px;padding:9px 14px;font-size:12px;font-family:var(--m);
+  color:var(--txt-3);background:var(--panel);border:1px solid var(--line);transition:all .22s;
+  clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,8px 100%,0 calc(100% - 8px))}
+.step .n{font-size:9.5px;opacity:.6}
+.step.active{color:var(--cyan);border-color:var(--cyan-line);background:var(--cyan-dim);box-shadow:0 0 18px rgba(34,224,238,.12)}
+.step.active .n{opacity:1;animation:blink 1.4s steps(1) infinite}
+@keyframes blink{50%{opacity:.25}}
+.step.done{color:var(--ok);border-color:rgba(46,230,168,.26)}
+
+.field{width:100%;padding:11px 14px;background:var(--deep);border:1px solid var(--line);color:var(--txt);
+  font-family:var(--m);font-size:12.5px;transition:border-color .2s,box-shadow .2s;clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,8px 100%,0 calc(100% - 8px))}
+.field::placeholder{color:var(--txt-4)}
+.field:focus{outline:none;border-color:var(--cyan-line);box-shadow:0 0 0 3px rgba(34,224,238,.1)}
+
+.drop{display:flex;flex-direction:column;align-items:center;text-align:center;gap:9px;padding:46px 24px;
+  border:1px dashed var(--line-2);cursor:pointer;background:var(--panel);transition:all .25s;clip-path:var(--cut)}
+.drop:hover{border-color:var(--cyan-line);background:linear-gradient(180deg,var(--cyan-dim),var(--panel))}
+.drop svg{width:28px;height:28px;color:var(--cyan)}
+.drop h4{font-size:16px;font-weight:600;color:var(--txt)}
+.drop p{font-size:12.5px;color:var(--txt-3)}
+
+.stat{display:flex;flex-direction:column;gap:2px}
+.stat b{font-family:var(--g);font-size:31px;font-weight:700;color:var(--txt);line-height:1.05;letter-spacing:-.02em}
+.stat b em{font-size:14px;color:var(--txt-4);font-style:normal}
+.stat span{font-family:var(--m);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--txt-4)}
+
+.frame{border:1px solid var(--line);background:#000;position:relative;clip-path:var(--cut)}
+.frame img{display:block;width:100%}
+.frame .hint{position:absolute;left:12px;bottom:12px;padding:5px 11px;font-family:var(--m);font-size:10.5px;
+  background:rgba(5,8,15,.82);border:1px solid var(--cyan-line);color:var(--cyan);backdrop-filter:blur(8px)}
+
+.skel{height:13px;background:linear-gradient(90deg,var(--panel-2) 25%,var(--panel-3) 37%,var(--panel-2) 63%);
+  background-size:400% 100%;animation:sk 1.5s ease infinite;clip-path:polygon(0 0,calc(100% - 6px) 0,100% 6px,100% 100%,0 100%)}
+@keyframes sk{0%{background-position:100% 0}100%{background-position:0 0}}
+
+.footer{margin-top:56px;padding-top:22px;border-top:1px solid var(--line);display:flex;justify-content:space-between;
+  font-family:var(--m);font-size:10px;color:var(--txt-4);letter-spacing:.12em}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <div class="mark"><span class="ring"></span><span class="ring r2"></span><span class="core"></span><span class="dot"></span></div>
+    <div class="brand">
+      <h1>HYPERION<span>//</span>STUDIO</h1>
+      <div class="s">Contrôle d'empilement astro</div>
+    </div>
+    <div class="stat-line"><span>V2.0</span><span>STATUT <b>PRÊT</b></span><span>16-BIT</span></div>
+  </div>
+
+  <div class="hero">
+    <div class="kick">Séquence d'empilement autonome</div>
+    <h2>200 poses entrent. <span>Une seule image sort.</span></h2>
+    <p>Détection, crop, tri, alignement et empilement par blocs. Du RAW au TIFF 16 bits, sans intervention.</p>
+  </div>
+
+  <section class="sec">
+    <h3>Palette / encres</h3><div class="bar"></div>
+    <div class="sws" style="margin-bottom:22px">
+      <div class="sw"><div class="chip" style="background:#05080f"></div><div class="m"><b>Deep</b><span>#05080F</span></div></div>
+      <div class="sw"><div class="chip" style="background:#070b14"></div><div class="m"><b>Background</b><span>#070B14</span></div></div>
+      <div class="sw"><div class="chip" style="background:#0b111e"></div><div class="m"><b>Panel</b><span>#0B111E</span></div></div>
+      <div class="sw"><div class="chip" style="background:#0e1524"></div><div class="m"><b>Panel 2</b><span>#0E1524</span></div></div>
+      <div class="sw"><div class="chip" style="background:#131c2e"></div><div class="m"><b>Panel 3</b><span>#131C2E</span></div></div>
+      <div class="sw"><div class="chip" style="background:#182338"></div><div class="m"><b>Filet</b><span>#182338</span></div></div>
+    </div>
+    <h3>Palette / signaux</h3><div class="bar"></div>
+    <div class="sws">
+      <div class="sw"><div class="chip" style="background:linear-gradient(100deg,#22e0ee,#8b5cf6)"></div><div class="m"><b>Cyan→Violet</b><span>#22E0EE → #8B5CF6</span></div></div>
+      <div class="sw"><div class="chip" style="background:#22e0ee"></div><div class="m"><b>Cyan</b><span>#22E0EE</span></div></div>
+      <div class="sw"><div class="chip" style="background:#2ee6a8"></div><div class="m"><b>Succès</b><span>#2EE6A8</span></div></div>
+      <div class="sw"><div class="chip" style="background:#ffc247"></div><div class="m"><b>Attention</b><span>#FFC247</span></div></div>
+      <div class="sw"><div class="chip" style="background:#ff5c78"></div><div class="m"><b>Erreur</b><span>#FF5C78</span></div></div>
+      <div class="sw"><div class="chip" style="background:#e4eeff"></div><div class="m"><b>Texte</b><span>#E4EEFF</span></div></div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <h3>Typographie</h3><div class="bar"></div>
+    <div class="trow"><span class="tag">Space Grotesk 700 · 38</span><span class="t-hero">Empiler 200 <span>poses</span></span></div>
+    <div class="trow"><span class="tag">Space Grotesk 600 · 25</span><span class="t-h1">Hyperion Studio</span></div>
+    <div class="trow"><span class="tag">Space Grotesk 600 · 17</span><span class="t-h2">Résultat du stack</span></div>
+    <div class="trow"><span class="tag">Space Grotesk 400 · 14</span><span class="t-body">Détection, crop, tri, alignement et empilement par blocs, entièrement automatiques.</span></div>
+    <div class="trow"><span class="tag">Space Mono 400 · 12</span><span class="mono">/Users/simon/Documents/Photo/lune 25 oct</span></div>
+    <div class="trow" style="border:none"><span class="tag">Space Mono 700 · 10.5</span><span class="mono" style="color:var(--cyan);letter-spacing:.14em">SÉQUENCE 03 / EMPILEMENT / 116-200</span></div>
+  </section>
+
+  <section class="sec">
+    <h3>Boutons</h3><div class="bar"></div>
+    <div class="stack">
+      <div class="row">
+        <button class="btn btn-p"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 4l14 8-14 8V4Z"/></svg>Lancer le traitement</button>
+        <button class="btn btn-s">Aperçu</button>
+        <button class="btn btn-g">Avancé</button>
+        <button class="btn btn-d">Annuler</button>
+        <button class="btn btn-s" disabled>Traitement…</button>
+      </div>
+      <div class="row">
+        <button class="btn btn-p btn-sm">Petit</button>
+        <button class="btn btn-s btn-sm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/></svg>Rafraîchir</button>
+        <button class="btn btn-g btn-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg></button>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <h3>Badges & puces</h3><div class="bar"></div>
+    <div class="stack">
+      <div class="row">
+        <span class="badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/></svg>ILCE-6000</span>
+        <span class="badge">4024 × 4024</span>
+        <span class="badge b-ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>OBJET DÉTECTÉ</span>
+        <span class="badge b-info">CACHE PRÊT</span>
+        <span class="badge b-warn">AUCUN OBJET</span>
+      </div>
+      <div class="row">
+        <button class="chip on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-3-6.7M21 3v6h-6"/></svg>ROT 90°</button>
+        <button class="chip">MIROIR H</button><button class="chip">MIROIR V</button>
+        <button class="chip on">ONDELETTES</button><button class="chip">BRUT</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <h3>Réglages</h3><div class="bar"></div>
+    <div class="grid c2">
+      <div class="card">
+        <div class="stack" style="gap:22px">
+          <label class="slider"><div class="sh"><span>Netteté (ondelettes)</span><output>1.40</output></div>
+            <input type="range" min="0" max="3" step="0.05" value="1.4" style="--pct:47%"></label>
+          <label class="slider"><div class="sh"><span>Échelles d'ondelettes</span><output>4</output></div>
+            <input type="range" min="1" max="6" step="1" value="4" style="--pct:60%"></label>
+          <label class="slider"><div class="sh"><span>Frames conservées</span><output>25 %</output></div>
+            <input type="range" min="1" max="100" step="1" value="25" style="--pct:25%"></label>
+        </div>
+      </div>
+      <div class="card">
+        <div class="stack" style="gap:20px">
+          <div class="tr"><span class="switch on"></span><div class="tt"><b>Aligner les frames</b><span>Corrige la dérive et la rotation de champ.</span></div></div>
+          <div class="tr"><span class="switch on"></span><div class="tt"><b>Pondérer par la qualité</b><span>Donne plus de poids aux poses nettes.</span></div></div>
+          <div class="tr"><span class="switch"></span><div class="tt"><b>Points d'alignement locaux</b><span>Expérimental — dégrade l'image.</span></div></div>
+          <div><div class="lbl">Nom de sortie</div><input class="field" value="lune_stack"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <h3>Séquence & progression</h3><div class="bar"></div>
+    <div class="card stack">
+      <div class="steps">
+        <div class="step done"><span class="n">01</span>IMPORT</div>
+        <div class="step done"><span class="n">02</span>ANALYSE</div>
+        <div class="step active"><span class="n">03</span>EMPILEMENT</div>
+        <div class="step"><span class="n">04</span>TRAITEMENT</div>
+        <div class="step"><span class="n">05</span>EXPORT</div>
+      </div>
+      <div class="progress"><div class="fill" style="width:58%"></div></div>
+      <div class="row" style="justify-content:space-between">
+        <span style="font-family:var(--m);font-size:11px;color:var(--cyan)">EMPILEMENT DES BLOCS — 116/200</span>
+        <span class="mono">2:14 · ETA 1:42</span>
+      </div>
+      <div class="progress done"><div class="fill" style="width:100%"></div></div>
+      <div class="progress ind"><div class="fill"></div></div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <h3>Cartes & dépôt</h3><div class="bar"></div>
+    <div class="grid c2">
+      <div class="card">
+        <div class="ct">Dossier sélectionné</div>
+        <div class="cs mono">/Users/simon/Documents/Photo/lune 25 oct</div>
+        <div class="row" style="margin-top:14px"><span class="badge b-ok">428 IMAGES</span><span class="badge b-info">CACHE PRÊT</span></div>
+      </div>
+      <div class="drop">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg>
+        <h4>Choisir un dossier d'images</h4><p>RAW (ARW, NEF, CR2…) ou TIFF 16 bits déjà convertis</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <h3>Résultat</h3><div class="bar"></div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap">
+        <div>
+          <div class="ct" style="color:var(--ok);display:flex;align-items:center;gap:8px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="width:17px;height:17px"><path d="M20 6 9 17l-5-5"/></svg>Stack terminé
+          </div>
+          <div class="cs mono" style="margin-top:4px">…/hyperion_out/lune 25 oct_stack.tif</div>
+        </div>
+        <div class="row">
+          <button class="btn btn-g btn-sm">APERÇU</button>
+          <button class="btn btn-g btn-sm">ENREGISTRER SOUS</button>
+          <button class="btn btn-s btn-sm">OUVRIR LE DOSSIER</button>
+        </div>
+      </div>
+      <div class="row" style="gap:44px;margin:26px 0 22px">
+        <div class="stat"><b>200<em>/200</em></b><span>frames empilées</span></div>
+        <div class="stat"><b>26</b><span>qualité moyenne</span></div>
+        <div class="stat"><b>3620<em>²</em></b><span>taille du crop</span></div>
+      </div>
+      <div class="frame">
+        <img alt="Aperçu" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='820' height='420'><defs><radialGradient id='s' cx='50%25' cy='50%25'><stop offset='0%25' stop-color='%230c1526'/><stop offset='100%25' stop-color='%2305080f'/></radialGradient><radialGradient id='m' cx='44%25' cy='38%25'><stop offset='0%25' stop-color='%23e6f0ff'/><stop offset='62%25' stop-color='%2393a4bd'/><stop offset='100%25' stop-color='%23414f68'/></radialGradient></defs><rect width='820' height='420' fill='url(%23s)'/><circle cx='410' cy='212' r='150' fill='url(%23m)'/><circle cx='370' cy='182' r='25' fill='%23b7c6dd' opacity='.5'/><circle cx='462' cy='240' r='16' fill='%23aebdd4' opacity='.45'/><circle cx='410' cy='122' r='11' fill='%23cbd8ec' opacity='.42'/><g fill='%23ffffff'><circle cx='96' cy='64' r='1.2' opacity='.7'/><circle cx='710' cy='96' r='1' opacity='.5'/><circle cx='158' cy='344' r='1' opacity='.45'/><circle cx='672' cy='348' r='1.3' opacity='.6'/></g></svg>">
+        <span class="hint">CLIQUER POUR INSPECTER 1:1</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <h3>Chargement</h3><div class="bar"></div>
+    <div class="card stack" style="max-width:420px">
+      <div class="skel" style="width:60%"></div>
+      <div class="skel" style="width:90%"></div>
+      <div class="skel" style="width:75%"></div>
+    </div>
+  </section>
+
+  <div class="footer"><span>HYPERION STUDIO</span><span>DIRECTION ARTISTIQUE Nº 2 · ORBITE</span></div>
+</div>
+</body>
+</html>

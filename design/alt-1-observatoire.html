@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<title>Hyperion Studio — Observatoire</title>
+<!--
+  DIRECTION 1 — « OBSERVATOIRE »
+  ------------------------------------------------------------------
+  Univers : le chic scientifique, l'archive, la coupole de nuit.
+  Typo  :  Spectral (serif d'affichage, élégant et lumineux)
+          + Inter (sans-serif fonctionnel pour l'interface)
+          + JetBrains Mono (données, chemins, mesures)
+  Palette : encre profonde, or patiné, papier.
+  Signature : titres en serif, petits caractères espacés, filets fins,
+              une vague de coupole en fond.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:      #0a0d16;
+  --ink-2:    #0e121e;
+  --card:     #121728;
+  --card-2:   #171d31;
+  --line:     #232b42;
+  --line-soft:#1a2136;
+
+  --paper:    #ece7dc;
+  --text:     #ece7dc;
+  --text-2:   #b9b4a8;
+  --text-3:   #837f74;
+
+  --gold:     #d8a657;
+  --gold-2:   #f0cf8a;
+  --gold-dim: rgba(216,166,87,.14);
+  --gold-line:rgba(216,166,87,.32);
+  --copper:   #c97b4a;
+
+  --ok:#7fc8a0; --warn:#e8b567; --err:#e07b7b;
+
+  --serif:'Spectral', Georgia, serif;
+  --sans:'Inter', system-ui, sans-serif;
+  --mono:'JetBrains Mono', ui-monospace, monospace;
+
+  --r: 4px;             /* peu d'arrondi = allure d'archive */
+  --r-lg: 6px;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:var(--sans);
+  background:var(--ink);
+  color:var(--text-2);
+  font-size:14px; line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+  position:relative; overflow-x:hidden;
+}
+/* Vague de coupole + halo doré : la signature du fond. */
+body::before{
+  content:""; position:fixed; inset:0; z-index:-2;
+  background:
+    radial-gradient(900px 500px at 82% -8%, rgba(216,166,87,.10), transparent 60%),
+    radial-gradient(760px 460px at 10% 6%,  rgba(90,120,200,.10), transparent 58%),
+    linear-gradient(180deg, #0b0f1a, #070a12);
+}
+body::after{
+  content:""; position:fixed; left:50%; bottom:-42vw; width:150vw; height:80vw;
+  transform:translateX(-50%); z-index:-1; pointer-events:none;
+  border-radius:50%;
+  border:1px solid rgba(216,166,87,.10);
+  box-shadow:0 0 0 1px rgba(216,166,87,.04) inset, 0 -40px 120px rgba(216,166,87,.05) inset;
+}
+
+.wrap{max-width:1180px;margin:0 auto;padding:44px 30px 110px}
+
+/* Bandeau haut façon plaque d'observatoire */
+.plaque{
+  display:flex;align-items:center;gap:16px;
+  padding-bottom:22px;border-bottom:1px solid var(--line);
+  margin-bottom:40px;
+}
+.crest{
+  width:52px;height:52px;flex-shrink:0;border-radius:2px;
+  display:grid;place-items:center;
+  background:linear-gradient(160deg,#1a2135,#101425);
+  border:1px solid var(--gold-line);
+  color:var(--gold);
+  box-shadow:0 0 30px rgba(216,166,87,.10), inset 0 0 20px rgba(216,166,87,.05);
+}
+.crest svg{width:26px;height:26px}
+.plaque h1{font-family:var(--serif);font-size:22px;font-weight:600;letter-spacing:.01em;color:var(--paper);line-height:1.1}
+.plaque .sub{font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--gold);margin-top:3px}
+.plaque .since{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--text-3);letter-spacing:.08em}
+
+.hero{margin-bottom:64px}
+.hero h2{font-family:var(--serif);font-size:46px;font-weight:600;line-height:1.08;letter-spacing:-.015em;color:var(--paper);max-width:760px}
+.hero h2 em{font-style:italic;color:var(--gold-2)}
+.hero p{margin-top:16px;max-width:600px;color:var(--text-3);font-size:15px}
+
+.section{margin-bottom:70px}
+.section > h3{
+  font-size:11px;font-weight:600;letter-spacing:.3em;text-transform:uppercase;
+  color:var(--gold);margin-bottom:8px;
+}
+.section > .rule{height:1px;background:linear-gradient(90deg,var(--gold-line),transparent 30%);margin-bottom:28px}
+
+.grid{display:grid;gap:20px}
+.c2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.c3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.c4{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:900px){.c2,.c3,.c4{grid-template-columns:1fr}}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.stack{display:flex;flex-direction:column;gap:16px}
+.lbl{font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--text-3);margin-bottom:14px;font-weight:600}
+
+/* Carte : filet doré en haut, presque pas d'arrondi */
+.card{
+  position:relative;background:var(--card);border:1px solid var(--line);
+  border-radius:var(--r-lg);padding:24px;
+  transition:border-color .25s,transform .25s;
+}
+.card::before{
+  content:"";position:absolute;top:-1px;left:24px;right:24px;height:1px;
+  background:linear-gradient(90deg,transparent,var(--gold-line),transparent);
+  opacity:0;transition:opacity .25s;
+}
+.card:hover::before{opacity:1}
+.card:hover{border-color:var(--line)}
+.card .ct{font-family:var(--serif);font-size:16px;color:var(--paper);font-weight:600;margin-bottom:4px}
+.card .cs{font-size:12.5px;color:var(--text-3)}
+
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:12px}
+.sw{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--card)}
+.sw .chip{height:58px}
+.sw .m{padding:9px 11px}
+.sw .m b{display:block;font-size:12px;color:var(--paper);font-weight:600}
+.sw .m span{font-family:var(--mono);font-size:10.5px;color:var(--text-3)}
+
+.trow{display:flex;align-items:baseline;gap:18px;padding:15px 0;border-bottom:1px solid var(--line-soft)}
+.trow .tag{font-family:var(--mono);font-size:10.5px;color:var(--text-3);min-width:150px}
+.t-hero{font-family:var(--serif);font-size:40px;font-weight:600;color:var(--paper);letter-spacing:-.01em}
+.t-hero i{font-style:italic;color:var(--gold-2)}
+.t-h1{font-family:var(--serif);font-size:27px;font-weight:600;color:var(--paper)}
+.t-h2{font-family:var(--sans);font-size:17px;font-weight:600;color:var(--paper);letter-spacing:-.01em}
+.t-body{font-size:14px;color:var(--text-2)}
+.t-small{font-size:12.5px;color:var(--text-3)}
+.mono{font-family:var(--mono);font-size:12px;color:var(--text-3)}
+
+/* Boutons — piste D : traité principal (or) + texte secondaire souligné.
+   Aucun dégradé, aucune ombre colorée, aucun reflet : uniquement trait et couleur. */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:9px;
+  border:1px solid var(--line);border-radius:var(--r);
+  padding:11px 20px;font-size:13px;font-weight:600;font-family:var(--sans);
+  letter-spacing:.01em;cursor:pointer;white-space:nowrap;background:transparent;color:var(--text-2);
+  transition:color .18s,border-color .18s,background .18s;
+}
+.btn svg{width:15px;height:15px}
+.btn:hover{color:var(--paper);border-color:var(--text-3)}
+.btn-p{color:var(--gold-2);border-color:var(--gold-line)}
+.btn-p:hover{background:var(--gold-dim);border-color:var(--gold);color:var(--gold-2)}
+.btn-s{color:var(--paper);border-color:rgba(185,180,168,.4)}
+.btn-s:hover{border-color:var(--paper)}
+.btn-g{color:var(--text-3)}
+.btn-g:hover{color:var(--paper);border-color:var(--text-3)}
+.btn-d{color:var(--err);border-color:rgba(224,123,123,.35)}
+.btn-d:hover{background:rgba(224,123,123,.07)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-sm{padding:8px 14px;font-size:12px}
+.btn-ic{padding:10px;width:38px;height:38px}
+
+/* Bouton texte (actions secondaires) */
+.tbtn{display:inline-flex;align-items:center;gap:8px;position:relative;padding:10px 2px;
+  font-family:var(--sans);font-size:13px;font-weight:600;letter-spacing:.02em;background:none;border:none;
+  cursor:pointer;color:var(--text-3);transition:color .18s}
+.tbtn svg{width:15px;height:15px}
+.tbtn::after{content:"";position:absolute;left:0;right:0;bottom:4px;height:1px;background:currentColor;
+  transform:scaleX(0);transform-origin:left;transition:transform .22s cubic-bezier(.4,0,.2,1)}
+.tbtn:hover{color:var(--paper)}
+.tbtn:hover::after{transform:scaleX(1)}
+.tbtn-strong{color:var(--paper)}
+.tbtn-strong::after{transform:scaleX(1);background:var(--gold-line)}
+.tbtn-strong:hover{color:var(--gold-2)}
+.tbtn-d{color:var(--err)}
+.tbtn:disabled{opacity:.4;cursor:not-allowed}
+
+.badge{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:var(--r);
+  font-size:11.5px;font-family:var(--mono);background:var(--card-2);border:1px solid var(--line);color:var(--text-3)}
+.badge svg{width:11px;height:11px}
+.b-ok{color:var(--ok);border-color:rgba(127,200,160,.3);background:rgba(127,200,160,.07)}
+.b-warn{color:var(--warn);border-color:rgba(232,181,103,.3);background:rgba(232,181,103,.07)}
+.b-info{color:var(--gold-2);border-color:var(--gold-line);background:var(--gold-dim)}
+
+.chip{padding:8px 15px;border-radius:var(--r);font-size:12px;font-weight:500;letter-spacing:.02em;
+  background:transparent;border:1px solid var(--line);color:var(--text-3);
+  cursor:pointer;display:inline-flex;align-items:center;gap:7px;transition:all .2s}
+.chip svg{width:13px;height:13px}
+.chip:hover{color:var(--paper);border-color:var(--text-3)}
+.chip.on{color:var(--gold-2);border-color:var(--gold-line);background:var(--gold-dim)}
+
+.slider{display:flex;flex-direction:column;gap:10px}
+.slider .sh{display:flex;justify-content:space-between;align-items:baseline}
+.slider .sh span{font-size:13px;color:var(--text-2)}
+.slider .sh output{font-family:var(--mono);font-size:12px;color:var(--gold-2);font-weight:500}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:3px;border-radius:2px;outline:none;cursor:pointer;
+  background:linear-gradient(90deg,var(--gold) 0%,var(--gold) var(--pct,40%),var(--line) var(--pct,40%),var(--line) 100%)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;
+  background:var(--paper);border:1px solid var(--gold);box-shadow:0 0 0 0 rgba(216,166,87,0);
+  transition:box-shadow .2s,transform .12s}
+input[type=range]::-webkit-slider-thumb:hover{box-shadow:0 0 0 6px rgba(216,166,87,.16)}
+
+.switch{position:relative;width:40px;height:22px;border-radius:11px;background:var(--card-2);
+  border:1px solid var(--line);cursor:pointer;flex-shrink:0;transition:all .2s}
+.switch::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;
+  background:var(--text-3);transition:transform .25s cubic-bezier(.22,1,.36,1),background .2s}
+.switch.on{background:var(--gold-dim);border-color:var(--gold-line)}
+.switch.on::after{transform:translateX(18px);background:var(--gold-2)}
+.tr{display:flex;align-items:flex-start;gap:13px}
+.tr .tt{display:flex;flex-direction:column;gap:2px}
+.tr .tt b{font-size:13.5px;color:var(--paper);font-weight:600}
+.tr .tt span{font-size:12px;color:var(--text-3)}
+
+.progress{height:4px;border-radius:2px;background:var(--line-soft);overflow:hidden}
+.progress .fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-2));transition:width .35s;position:relative}
+.progress .fill::after{content:"";position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent);animation:sh 1.8s ease-in-out infinite}
+@keyframes sh{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+.progress.done .fill{background:linear-gradient(90deg,#4f9d76,var(--ok))}
+.progress.done .fill::after{display:none}
+.progress.ind .fill{width:32%!important;animation:sl 1.6s cubic-bezier(.4,0,.2,1) infinite}
+@keyframes sl{0%{margin-left:-32%}100%{margin-left:100%}}
+
+.steps{display:flex;gap:0;flex-wrap:wrap;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.step{flex:1;min-width:150px;display:flex;align-items:center;gap:9px;padding:12px 15px;font-size:12px;
+  color:var(--text-3);border-right:1px solid var(--line);transition:all .25s;background:var(--card)}
+.step:last-child{border-right:none}
+.step .n{font-family:var(--mono);font-size:10px;color:var(--text-3)}
+.step.active{color:var(--gold-2);background:var(--gold-dim)}
+.step.active .n{color:var(--gold)}
+.step.done{color:var(--ok)}
+.step.done .n{color:var(--ok)}
+
+.field{width:100%;padding:11px 14px;border-radius:var(--r);background:var(--ink-2);border:1px solid var(--line);
+  color:var(--paper);font-size:13.5px;font-family:var(--mono);transition:border-color .2s,box-shadow .2s}
+.field::placeholder{color:var(--text-3)}
+.field:focus{outline:none;border-color:var(--gold-line);box-shadow:0 0 0 3px rgba(216,166,87,.10)}
+
+.drop{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;padding:46px 24px;
+  border:1px dashed var(--line);border-radius:var(--r-lg);cursor:pointer;background:var(--card);transition:all .25s}
+.drop:hover{border-color:var(--gold-line);background:linear-gradient(180deg,var(--gold-dim),var(--card))}
+.drop svg{width:30px;height:30px;color:var(--gold)}
+.drop h4{font-family:var(--serif);font-size:17px;color:var(--paper);font-weight:600}
+.drop p{font-size:12.5px;color:var(--text-3)}
+
+.stat{display:flex;flex-direction:column;gap:2px}
+.stat b{font-family:var(--serif);font-size:32px;font-weight:600;color:var(--paper);line-height:1.05}
+.stat b em{font-size:15px;color:var(--text-3);font-style:normal}
+.stat span{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-3)}
+
+.frame{border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--line);background:#000;position:relative}
+.frame img{display:block;width:100%}
+.frame .hint{position:absolute;left:12px;bottom:12px;padding:5px 11px;border-radius:var(--r);
+  font-family:var(--mono);font-size:11px;background:rgba(10,13,22,.8);border:1px solid var(--gold-line);color:var(--gold-2);backdrop-filter:blur(8px)}
+
+.skel{border-radius:var(--r);height:13px;background:linear-gradient(90deg,var(--card-2) 25%,var(--line) 37%,var(--card-2) 63%);
+  background-size:400% 100%;animation:sk 1.5s ease infinite}
+@keyframes sk{0%{background-position:100% 0}100%{background-position:0 0}}
+
+.footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--line);display:flex;justify-content:space-between;
+  font-family:var(--mono);font-size:11px;color:var(--text-3);letter-spacing:.06em}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="plaque">
+    <div class="crest">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+        <circle cx="12" cy="12" r="4"/><ellipse cx="12" cy="12" rx="10" ry="3.4" transform="rotate(-20 12 12)"/>
+        <circle cx="19" cy="6" r="1.1" fill="currentColor"/>
+      </svg>
+    </div>
+    <div>
+      <h1>Hyperion Studio</h1>
+      <div class="sub">Observatoire · Empilement astro</div>
+    </div>
+    <div class="since">EST. MMXXVI</div>
+  </div>
+
+  <div class="hero">
+    <h2>Du <em>vacarme des poses</em> naît la netteté d'un seul instant.</h2>
+    <p>Empilement lunaire, planétaire et ciel profond — RAW vers TIFF 16 bits. Détection, crop,
+       alignement et empilement par blocs, entièrement automatiques.</p>
+  </div>
+
+  <!-- Palette -->
+  <section class="section">
+    <h3>Palette</h3><div class="rule"></div>
+    <div class="lbl">Encres</div>
+    <div class="swatches" style="margin-bottom:24px">
+      <div class="sw"><div class="chip" style="background:#0a0d16"></div><div class="m"><b>Encre</b><span>#0A0D16</span></div></div>
+      <div class="sw"><div class="chip" style="background:#0e121e"></div><div class="m"><b>Encre 2</b><span>#0E121E</span></div></div>
+      <div class="sw"><div class="chip" style="background:#121728"></div><div class="m"><b>Carte</b><span>#121728</span></div></div>
+      <div class="sw"><div class="chip" style="background:#171d31"></div><div class="m"><b>Carte 2</b><span>#171D31</span></div></div>
+      <div class="sw"><div class="chip" style="background:#232b42"></div><div class="m"><b>Filet</b><span>#232B42</span></div></div>
+    </div>
+    <div class="lbl">Or & signaux</div>
+    <div class="swatches">
+      <div class="sw"><div class="chip" style="background:linear-gradient(180deg,#f0cf8a,#d8a657)"></div><div class="m"><b>Or</b><span>#D8A657 / #F0CF8A</span></div></div>
+      <div class="sw"><div class="chip" style="background:#c97b4a"></div><div class="m"><b>Cuivre</b><span>#C97B4A</span></div></div>
+      <div class="sw"><div class="chip" style="background:#7fc8a0"></div><div class="m"><b>Succès</b><span>#7FC8A0</span></div></div>
+      <div class="sw"><div class="chip" style="background:#e8b567"></div><div class="m"><b>Attention</b><span>#E8B567</span></div></div>
+      <div class="sw"><div class="chip" style="background:#e07b7b"></div><div class="m"><b>Erreur</b><span>#E07B7B</span></div></div>
+      <div class="sw"><div class="chip" style="background:#ece7dc"></div><div class="m"><b>Papier</b><span>#ECE7DC</span></div></div>
+    </div>
+  </section>
+
+  <!-- Typographie -->
+  <section class="section">
+    <h3>Typographie</h3><div class="rule"></div>
+    <div class="trow"><span class="tag">Spectral 600 · 40</span><span class="t-hero">Empiler <i>200 poses</i></span></div>
+    <div class="trow"><span class="tag">Spectral 600 · 27</span><span class="t-h1">Hyperion Studio</span></div>
+    <div class="trow"><span class="tag">Inter 600 · 17</span><span class="t-h2">Résultat du stack</span></div>
+    <div class="trow"><span class="tag">Inter 400 · 14</span><span class="t-body">Détection, crop, tri, alignement et empilement par blocs, entièrement automatiques.</span></div>
+    <div class="trow"><span class="tag">Inter 400 · 12.5</span><span class="t-small">Le crop conserve toujours l'objet entier, avec une marge de noir.</span></div>
+    <div class="trow" style="border:none"><span class="tag">JetBrains Mono 400</span><span class="mono">/Users/simon/Documents/Photo/lune 25 oct</span></div>
+  </section>
+
+  <!-- Boutons -->
+  <section class="section">
+    <h3>Boutons</h3><div class="rule"></div>
+    <div class="stack">
+      <div class="lbl">Action principale + actions secondaires</div>
+      <div class="row" style="gap:26px">
+        <button class="btn btn-p"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 4l14 8-14 8V4Z"/></svg>Lancer le traitement</button>
+        <span style="width:1px;height:20px;background:var(--line)"></span>
+        <button class="tbtn">Aperçu</button>
+        <button class="tbtn">Enregistrer sous</button>
+        <button class="tbtn">Ouvrir le dossier</button>
+        <button class="tbtn tbtn-d">Annuler</button>
+      </div>
+      <div class="lbl" style="margin-top:12px">Autres états</div>
+      <div class="row">
+        <button class="btn btn-sm">Petit</button>
+        <button class="btn">Moyen</button>
+        <button class="btn btn-d">Annuler (cadré)</button>
+        <button class="btn" disabled>Traitement…</button>
+        <button class="btn btn-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Badges -->
+  <section class="section">
+    <h3>Badges & puces</h3><div class="rule"></div>
+    <div class="stack">
+      <div class="row">
+        <span class="badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/></svg>ILCE-6000</span>
+        <span class="badge">4024 × 4024</span>
+        <span class="badge b-ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>objet détecté</span>
+        <span class="badge b-info">cache prêt</span>
+        <span class="badge b-warn">objet non détecté</span>
+      </div>
+      <div class="row">
+        <button class="chip on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-3-6.7M21 3v6h-6"/></svg>90°</button>
+        <button class="chip">Miroir H</button><button class="chip">Miroir V</button>
+        <button class="chip on">Ondelettes</button><button class="chip">Brut</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Formulaires -->
+  <section class="section">
+    <h3>Curseurs & interrupteurs</h3><div class="rule"></div>
+    <div class="grid c2">
+      <div class="card">
+        <div class="stack" style="gap:22px">
+          <label class="slider"><div class="sh"><span>Netteté (ondelettes)</span><output>1.40</output></div>
+            <input type="range" min="0" max="3" step="0.05" value="1.4" style="--pct:47%"></label>
+          <label class="slider"><div class="sh"><span>Échelles d'ondelettes</span><output>4</output></div>
+            <input type="range" min="1" max="6" step="1" value="4" style="--pct:60%"></label>
+          <label class="slider"><div class="sh"><span>Frames conservées</span><output>25 %</output></div>
+            <input type="range" min="1" max="100" step="1" value="25" style="--pct:25%"></label>
+        </div>
+      </div>
+      <div class="card">
+        <div class="stack" style="gap:20px">
+          <div class="tr"><span class="switch on"></span><div class="tt"><b>Aligner les frames</b><span>Corrige la dérive et la rotation de champ.</span></div></div>
+          <div class="tr"><span class="switch on"></span><div class="tt"><b>Pondérer par la qualité</b><span>Donne plus de poids aux poses nettes.</span></div></div>
+          <div class="tr"><span class="switch"></span><div class="tt"><b>Points d'alignement locaux</b><span>Expérimental — dégrade l'image.</span></div></div>
+          <div><div class="lbl" style="margin-bottom:8px">Nom de sortie</div><input class="field" value="lune_stack"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Étapes -->
+  <section class="section">
+    <h3>Étapes & progression</h3><div class="rule"></div>
+    <div class="card stack">
+      <div class="steps">
+        <div class="step done"><span class="n">01</span>Import RAW</div>
+        <div class="step done"><span class="n">02</span>Analyse</div>
+        <div class="step active"><span class="n">03</span>Empilement</div>
+        <div class="step"><span class="n">04</span>Post-traitement</div>
+        <div class="step"><span class="n">05</span>Export TIFF</div>
+      </div>
+      <div class="progress"><div class="fill" style="width:58%"></div></div>
+      <div class="row" style="justify-content:space-between">
+        <span style="font-size:12.5px;color:var(--text-2)">Empilement des blocs — 116/200</span>
+        <span class="mono">2 min 14 s · ~1 min 42 s restant</span>
+      </div>
+      <div class="progress done"><div class="fill" style="width:100%"></div></div>
+      <div class="progress ind"><div class="fill"></div></div>
+    </div>
+  </section>
+
+  <!-- Cartes -->
+  <section class="section">
+    <h3>Cartes & dépôt</h3><div class="rule"></div>
+    <div class="grid c2">
+      <div class="card">
+        <div class="ct">Dossier sélectionné</div>
+        <div class="cs mono">/Users/simon/Documents/Photo/lune 25 oct</div>
+        <div class="row" style="margin-top:14px"><span class="badge b-ok">428 images</span><span class="badge b-info">cache prêt</span></div>
+      </div>
+      <div class="drop">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg>
+        <h4>Choisir un dossier d'images</h4><p>RAW (ARW, NEF, CR2…) ou TIFF 16 bits déjà convertis</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Résultat -->
+  <section class="section">
+    <h3>Résultat</h3><div class="rule"></div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap">
+        <div>
+          <div class="ct" style="color:var(--ok);display:flex;align-items:center;gap:8px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="width:17px;height:17px"><path d="M20 6 9 17l-5-5"/></svg>Stack terminé
+          </div>
+          <div class="cs mono" style="margin-top:4px">…/hyperion_out/lune 25 oct_stack.tif</div>
+        </div>
+        <div class="row" style="gap:20px">
+          <button class="tbtn">Aperçu</button>
+          <button class="tbtn">Enregistrer sous</button>
+          <button class="btn btn-sm">Ouvrir le dossier</button>
+        </div>
+      </div>
+      <div class="row" style="gap:44px;margin:26px 0 22px">
+        <div class="stat"><b>200<em>/200</em></b><span>frames empilées</span></div>
+        <div class="stat"><b>26</b><span>qualité moyenne</span></div>
+        <div class="stat"><b>3620<em>²</em></b><span>taille du crop</span></div>
+      </div>
+      <div class="frame">
+        <img alt="Aperçu" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='820' height='420'><defs><radialGradient id='s' cx='50%25' cy='50%25'><stop offset='0%25' stop-color='%23101724'/><stop offset='100%25' stop-color='%23070a12'/></radialGradient><radialGradient id='m' cx='46%25' cy='40%25'><stop offset='0%25' stop-color='%23e8e2d6'/><stop offset='64%25' stop-color='%23a49e91'/><stop offset='100%25' stop-color='%23484136'/></radialGradient></defs><rect width='820' height='420' fill='url(%23s)'/><circle cx='410' cy='212' r='150' fill='url(%23m)'/><circle cx='370' cy='182' r='25' fill='%23c9c2b4' opacity='.5'/><circle cx='462' cy='240' r='16' fill='%23c0b8a9' opacity='.45'/><circle cx='410' cy='122' r='11' fill='%23d4cdbf' opacity='.4'/><g fill='%23ffffff'><circle cx='96' cy='64' r='1.2' opacity='.7'/><circle cx='710' cy='96' r='1' opacity='.5'/><circle cx='158' cy='344' r='1' opacity='.45'/><circle cx='672' cy='348' r='1.3' opacity='.6'/></g></svg>">
+        <span class="hint">Cliquez pour inspecter à 100 %</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="footer"><span>HYPERION STUDIO — OBSERVATOIRE</span><span>DIRECTION ARTISTIQUE Nº 1</span></div>
+</div>
+</body>
+</html>

@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<title>Hyperion Studio — Pistes de logo</title>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ============================================================================
+   PLANCHES DE LOGO — mood Observatoire
+   Cinq pistes dessinées, plus une planche de contexte (tailles, fonds).
+   Palette d'emprunt : encre profonde, or patiné, papier.
+   ============================================================================ */
+:root{
+  --ink:#0a0d16; --ink-2:#0e121e; --card:#121728; --card-2:#171d31;
+  --line:#232b42; --paper:#ece7dc; --text-2:#b9b4a8; --text-3:#837f74;
+  --gold:#d8a657; --gold-2:#f0cf8a; --gold-line:rgba(216,166,87,.4); --gold-dim:rgba(216,166,87,.12);
+  --serif:'Spectral',Georgia,serif; --sans:'Inter',system-ui,sans-serif; --mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--ink);color:var(--text-2);font-size:14px;line-height:1.6;
+  -webkit-font-smoothing:antialiased;padding:52px 32px 110px;
+  background-image:radial-gradient(900px 480px at 84% -8%,rgba(216,166,87,.09),transparent 60%),
+                   radial-gradient(760px 460px at 4% 4%,rgba(90,120,200,.08),transparent 58%)}
+.wrap{max-width:1120px;margin:0 auto}
+h1{font-family:var(--serif);font-size:34px;font-weight:600;color:var(--paper);margin-bottom:10px}
+.lead{color:var(--text-3);max-width:700px;margin-bottom:14px;font-size:15px}
+.src{font-family:var(--mono);font-size:11.5px;color:var(--text-3);line-height:1.8;
+  border-left:2px solid var(--gold-line);padding-left:14px;margin-bottom:56px}
+.src b{color:var(--gold-2);font-weight:500}
+
+.band{margin-bottom:60px}
+.band-head{display:flex;align-items:baseline;gap:14px;padding-bottom:16px;border-bottom:1px solid var(--line);margin-bottom:8px}
+.band-tag{font-family:var(--mono);font-size:11px;color:var(--gold);letter-spacing:.2em}
+.band h2{font-family:var(--serif);font-size:23px;font-weight:600;color:var(--paper)}
+.band .why{color:var(--text-3);font-size:13.5px;margin:16px 0 28px;max-width:760px}
+.band .why b{color:var(--paper);font-weight:600}
+.band .why i{color:var(--gold-2);font-style:italic}
+
+.showcase{display:grid;grid-template-columns:280px 1fr;gap:0;
+  border:1px solid var(--line);border-radius:6px;overflow:hidden;margin-bottom:14px}
+@media(max-width:800px){.showcase{grid-template-columns:1fr}}
+.mark-cell{display:grid;place-items:center;padding:44px;background:var(--card);
+  border-right:1px solid var(--line)}
+.mark-cell svg{width:120px;height:120px;color:var(--gold)}
+.info-cell{padding:28px 30px;display:flex;flex-direction:column;gap:16px;justify-content:center}
+.info-cell h4{font-family:var(--serif);font-size:18px;color:var(--paper);font-weight:600}
+.info-cell p{font-size:13px;color:var(--text-3);line-height:1.65}
+.info-cell .sym{font-family:var(--mono);font-size:11.5px;color:var(--text-3);line-height:1.8}
+.info-cell .sym b{color:var(--gold-2);font-weight:500}
+
+/* Bandeau de tailles */
+.sizes{display:flex;align-items:center;gap:26px;flex-wrap:wrap;background:var(--card);
+  border:1px solid var(--line);border-radius:6px;padding:26px 30px}
+.sizes svg{color:var(--gold)}
+.sizes .s16 svg{width:16px;height:16px}
+.sizes .s24 svg{width:24px;height:24px}
+.sizes .s40 svg{width:40px;height:40px}
+.sizes .s72 svg{width:72px;height:72px}
+.sizes .lbl{font-family:var(--mono);font-size:10px;color:var(--text-3);text-align:center;display:block;margin-top:6px}
+
+/* Bandeau de fonds (test clair / sombre) */
+.ontos{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:760px){.ontos{grid-template-columns:1fr}}
+.onto{border-radius:6px;padding:36px;display:grid;place-items:center;border:1px solid var(--line)}
+.onto svg{width:80px;height:80px}
+.onto.dark{background:#0a0d16;color:var(--gold)}
+.onto.light{background:#f6f3ec;color:#a9762a}
+.onto.mono{background:#0a0d16;color:var(--paper)}
+.onto .cap{font-family:var(--mono);font-size:10px;margin-top:14px;opacity:.6}
+
+/* Lockup horizontal */
+.lockup{display:flex;align-items:center;gap:16px}
+.lockup svg{width:52px;height:52px;color:var(--gold);flex-shrink:0}
+.lockup .txt b{font-family:var(--serif);font-size:22px;font-weight:600;color:var(--paper);display:block;line-height:1.1}
+.lockup .txt span{font-size:10.5px;letter-spacing:.28em;text-transform:uppercase;color:var(--gold)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Cinq pistes de logo</h1>
+  <p class="lead">Dessinées dans le mood Observatoire : trait fin, or patiné, esprit sceau savant du XIXᵉ.
+     Chaque piste se lit à 16 px comme à 120 px, et tient en une seule couleur.</p>
+  <p class="src">
+    Références étudiées — <b>VELA</b> (joaillerie céleste : « le silence et la précision d'un observatoire à 2 h du matin »,
+    or pâle #C9A96E sur marine profond, aucune courbe dans l'icône) · <b>Royal Astronomical Society</b>
+    (rayons étagés pivotés à 23,5°, planète et lune en orbite) · <b>RASC</b> (sceaux d'observatoires, notion d'emblème) ·
+    <b>Observatoire de Paris</b> (monogramme orbital, filet, rigueur des sociétés savantes) ·
+    <b>Griffith Observatory</b> (inspiré des fresques, voix sophistiquée).
+  </p>
+
+  <!-- ==================== 1 · MERIDIENNE ==================== -->
+  <section class="band">
+    <div class="band-head"><span class="band-tag">PISTE 1</span><h2>La Méridienne</h2></div>
+    <p class="why">Le motif le plus ancien et le plus fort : <b>un cercle, une ligne verticale</b>. C'est l'instrument
+      de visée de tous les observatoires du monde. Ici, la ligne devient le <i>I</i> de « Hyperion » et le point
+      central du réticule. Aucune courbe superflue, aucune fioriture : à 16 px, c'est juste un cercle barré —
+      parfaitement lisible.</p>
+    <div class="showcase">
+      <div class="mark-cell">
+        <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+          <circle cx="50" cy="50" r="36"/>
+          <circle cx="50" cy="50" r="40" stroke-opacity=".28" stroke-width="1.2"/>
+          <line x1="50" y1="6" x2="50" y2="30"/>
+          <line x1="50" y1="70" x2="50" y2="94"/>
+          <line x1="6" y1="50" x2="26" y2="50"/>
+          <line x1="74" y1="50" x2="94" y2="50"/>
+          <circle cx="50" cy="50" r="3.2" fill="currentColor" stroke="none"/>
+        </svg>
+      </div>
+      <div class="info-cell">
+        <h4>La Méridienne</h4>
+        <p>Un cercle d'instrument, quatre repères cardinaux, un point de mire. Sobre, savant, intemporel.
+           C'est l'esprit du sceau d'observatoire, réduit à l'essentiel géométrique.</p>
+        <div class="sym">
+          Symbole : <b>le réticule de visée</b><br>
+          Registre : savant / instrument<br>
+          Force : lisibilité maximale à toute taille
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 2 · ÉTOILE MERIDIENNE ==================== -->
+  <section class="band">
+    <div class="band-head"><span class="band-tag">PISTE 2</span><h2>L'Étoile merveilleuse</h2></div>
+    <p class="why">L'étoile à huit branches — <b>rose des vents des navigateurs</b>, mais construite uniquement
+      de lignes droites, comme chez VELA. Longues branches cardinales, courtes branches diagonales.
+      Un fin anneau la retient, comme une monture. <i>À petite taille les détails disparaissent</i> et il reste
+      une étoile nette ; à grande taille, l'anneau devient la signature.</p>
+    <div class="showcase">
+      <div class="mark-cell">
+        <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round">
+          <path d="M50 8 L50 38 M50 62 L50 92 M8 50 L38 50 M62 50 L92 50"/>
+          <path d="M21 21 L40 40 M60 60 L79 79 M79 21 L60 40 M40 60 L21 79" stroke-width="1.6" stroke-opacity=".7"/>
+          <circle cx="50" cy="50" r="30" stroke-width="1.4" stroke-opacity=".5"/>
+          <circle cx="50" cy="50" r="4.6" fill="currentColor" stroke="none"/>
+        </svg>
+      </div>
+      <div class="info-cell">
+        <h4>L'Étoile merveilleuse</h4>
+        <p>Rose des vents dessinée au trait. Elle appartient autant à la cartographie ancienne qu'à
+           l'instrument de mesure. Très reconnaissable, et magnifique en dorure à chaud sur fond sombre.</p>
+        <div class="sym">
+          Symbole : <b>rose des vents / étoile polaire</b><br>
+          Registre : cartographique / navigation<br>
+          Force : mémorisation immédiate
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 3 · MONOGRAMME H ==================== -->
+  <section class="band">
+    <div class="band-head"><span class="band-tag">PISTE 3</span><h2>Le monogramme H</h2></div>
+    <p class="why">Le plus « société savante » : <b>l'initiale comme emblème</b>, à la façon des monogrammes
+      d'Observatoire de Paris. Le H est traversé d'un anneau incliné — l'orbite — qui le transforme en
+      instrument. Lisible même brodé, gravé ou embossé.</p>
+    <div class="showcase">
+      <div class="mark-cell">
+        <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round">
+          <path d="M34 26 L34 74 M66 26 L66 74 M34 50 L66 50"/>
+          <ellipse cx="50" cy="50" rx="42" ry="15" transform="rotate(-18 50 50)"
+                   stroke-width="1.8" stroke-opacity=".85"/>
+        </svg>
+      </div>
+      <div class="info-cell">
+        <h4>Le monogramme H</h4>
+        <p>Un H massif, dont la barre centrale se prolonge en anneau orbital. Registre de sceau, très
+           institutionnel — il vieillit extrêmement bien et fonctionne partout.</p>
+        <div class="sym">
+          Symbole : <b>initiale + orbite</b><br>
+          Registre : société savante / institution<br>
+          Force : fonctionne en gravure, broderie, cire
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 4 · ARMILLAIRE ==================== -->
+  <section class="band">
+    <div class="band-head"><span class="band-tag">PISTE 4</span><h2>La sphère armillaire</h2></div>
+    <p class="why">L'instrument astronomique le plus emblématique, réduit à trois anneaux entrecroisés et un
+      axe. Repris par <b>toutes les sociétés d'astronomie du monde</b> parce qu'il symbolise la sphère céleste
+      entière. Un peu plus riche visuellement ; il perd des détails en dessous de 24 px.</p>
+    <div class="showcase">
+      <div class="mark-cell">
+        <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+          <circle cx="50" cy="50" r="34"/>
+          <ellipse cx="50" cy="50" rx="34" ry="13"/>
+          <ellipse cx="50" cy="50" rx="13" ry="34"/>
+          <line x1="50" y1="6" x2="50" y2="94" stroke-width="2.6"/>
+          <circle cx="50" cy="16" r="3" fill="currentColor" stroke="none"/>
+          <circle cx="50" cy="84" r="3" fill="currentColor" stroke="none"/>
+        </svg>
+      </div>
+      <div class="info-cell">
+        <h4>La sphère armillaire</h4>
+        <p>Trois cercles célestes, un axe polaire marqué à ses extrémités. C'est le sceau classique des
+           observatoires. Riche, mais plus chargé : à réserver à un en-tête, pas à l'icône de l'app.</p>
+        <div class="sym">
+          Symbole : <b>sphère céleste</b><br>
+          Registre : académique / classique<br>
+          Limite : s'appauvrit en dessous de 24 px
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 5 · ASTRE & OMBRE ==================== -->
+  <section class="band">
+    <div class="band-head"><span class="band-tag">PISTE 5</span><h2>L'astre éclipsé</h2></div>
+    <p class="why">Le plus radicalement simple : un <b>disque plein mangé par un croissant</b>, à la manière
+      d'un sceau de cire ou d'un glyphe antique. Rien à voir avec le croissant de lune naïf : ici, c'est
+      l'ombre d'un corps sur un autre — <i>le principe même de l'occultation que l'on va photographier</i>.
+      Pur, puissant, et parfaitement net à 16 px.</p>
+    <div class="showcase">
+      <div class="mark-cell">
+        <svg viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="34" fill="currentColor"/>
+          <circle cx="63" cy="44" r="30" fill="var(--card)"/>
+          <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" stroke-width="1.4" stroke-opacity=".45"/>
+        </svg>
+      </div>
+      <div class="info-cell">
+        <h4>L'astre éclipsé</h4>
+        <p>Un disque, une ombre, un fin cercle d'instrument. Le plus reposant visuellement et le plus
+           « produit » des cinq : il ressemble à un vrai bouton d'app, pas à un ornement.</p>
+        <div class="sym">
+          Symbole : <b>corps céleste à l'ombre</b><br>
+          Registre : glyphe / produit<br>
+          Force : le plus net à petite taille
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== LOCKUP ==================== -->
+  <section class="band">
+    <div class="band-head"><span class="band-tag">EN SITUATION</span><h2>Le lockup complet</h2></div>
+    <p class="why">Le logo accompagné du nom, tel qu'il apparaîtrait dans l'en-tête de l'app. La piste 5
+      sert d'exemple ; le lockup s'applique aux cinq.</p>
+    <div class="showcase" style="grid-template-columns:1fr">
+      <div class="info-cell" style="padding:40px;gap:28px">
+        <div class="lockup">
+          <svg viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="34" fill="currentColor"/>
+            <circle cx="63" cy="44" r="30" fill="var(--card)"/>
+            <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" stroke-width="1.4" stroke-opacity=".45"/>
+          </svg>
+          <div class="txt">
+            <b>Hyperion Studio</b>
+            <span>Observatoire · Empilement astro</span>
+          </div>
+        </div>
+        <div class="lockup" style="border-top:1px solid var(--line);padding-top:28px">
+          <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+            <circle cx="50" cy="50" r="36"/>
+            <line x1="50" y1="6" x2="50" y2="30"/><line x1="50" y1="70" x2="50" y2="94"/>
+            <line x1="6" y1="50" x2="26" y2="50"/><line x1="74" y1="50" x2="94" y2="50"/>
+            <circle cx="50" cy="50" r="3.2" fill="currentColor" stroke="none"/>
+          </svg>
+          <div class="txt">
+            <b>Hyperion Studio</b>
+            <span>Observatoire · Empilement astro</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== TAILLES ==================== -->
+  <section class="band">
+    <div class="band-head"><span class="band-tag">TEST D'ÉCHELLE</span><h2>À toutes les tailles</h2></div>
+    <p class="why">Un bon logo doit tenir de l'icône de fenêtre jusqu'au bandeau. Vérification avec la piste 2.</p>
+    <div class="sizes">
+      <div class="s16"><span class="lbl">16 px</span>
+        <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="6" stroke-linejoin="round">
+          <path d="M50 4 L50 36 M50 64 L50 96 M4 50 L36 50 M64 50 L96 50"/>
+          <path d="M17 17 L40 40 M60 60 L83 83 M83 17 L60 40 M40 60 L17 83" stroke-width="4"/>
+        </svg></div>
+      <div class="s24"><span class="lbl">24 px</span>
+        <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="5" stroke-linejoin="round">
+          <path d="M50 4 L50 36 M50 64 L50 96 M4 50 L36 50 M64 50 L96 50"/>
+          <path d="M17 17 L40 40 M60 60 L83 83 M83 17 L60 40 M40 60 L17 83" stroke-width="3.4"/>
+        </svg></div>
+      <div class="s40"><span class="lbl">40 px</span>
+        <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linejoin="round">
+          <path d="M50 8 L50 38 M50 62 L50 92 M8 50 L38 50 M62 50 L92 50"/>
+          <path d="M21 21 L40 40 M60 60 L79 79 M79 21 L60 40 M40 60 L21 79" stroke-width="2.2"/>
+          <circle cx="50" cy="50" r="30" stroke-width="1.6" stroke-opacity=".5"/>
+        </svg></div>
+      <div class="s72"><span class="lbl">72 px</span>
+        <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round">
+          <path d="M50 8 L50 38 M50 62 L50 92 M8 50 L38 50 M62 50 L92 50"/>
+          <path d="M21 21 L40 40 M60 60 L79 79 M79 21 L60 40 M40 60 L21 79" stroke-width="1.6" stroke-opacity=".7"/>
+          <circle cx="50" cy="50" r="30" stroke-width="1.4" stroke-opacity=".5"/>
+          <circle cx="50" cy="50" r="4.6" fill="currentColor" stroke="none"/>
+        </svg></div>
+    </div>
+  </section>
+
+  <!-- ==================== FONDS ==================== -->
+  <section class="band" style="margin-bottom:0">
+    <div class="band-head"><span class="band-tag">VERSATILITÉ</span><h2>Sur tous les fonds</h2></div>
+    <p class="why">L'or sur encre, l'or assombri sur papier, et une version monochrome pour les usages
+      contraints (gravure, tampon, impression une couleur).</p>
+    <div class="ontos">
+      <div class="onto dark">
+        <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round">
+          <path d="M50 8 L50 38 M50 62 L50 92 M8 50 L38 50 M62 50 L92 50"/>
+          <path d="M21 21 L40 40 M60 60 L79 79 M79 21 L60 40 M40 60 L21 79" stroke-width="1.6" stroke-opacity=".7"/>
+          <circle cx="50" cy="50" r="30" stroke-width="1.4" stroke-opacity=".5"/>
+          <circle cx="50" cy="50" r="4.6" fill="currentColor" stroke="none"/>
+        </svg>
+        <span class="cap" style="color:var(--gold)">or / encre</span>
+      </div>
+      <div class="onto light">
+        <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round">
+          <path d="M50 8 L50 38 M50 62 L50 92 M8 50 L38 50 M62 50 L92 50"/>
+          <path d="M21 21 L40 40 M60 60 L79 79 M79 21 L60 40 M40 60 L21 79" stroke-width="1.6" stroke-opacity=".7"/>
+          <circle cx="50" cy="50" r="30" stroke-width="1.4" stroke-opacity=".5"/>
+          <circle cx="50" cy="50" r="4.6" fill="currentColor" stroke="none"/>
+        </svg>
+        <span class="cap" style="color:#a9762a">or assombri / papier</span>
+      </div>
+      <div class="onto mono">
+        <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round">
+          <path d="M50 8 L50 38 M50 62 L50 92 M8 50 L38 50 M62 50 L92 50"/>
+          <path d="M21 21 L40 40 M60 60 L79 79 M79 21 L60 40 M40 60 L21 79" stroke-width="1.6" stroke-opacity=".7"/>
+        </svg>
+        <span class="cap" style="color:var(--paper)">monochrome</span>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>
