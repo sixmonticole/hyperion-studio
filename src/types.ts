@@ -31,13 +31,48 @@ export interface ScanResult {
 export interface Progress {
   kind: "phase" | "import" | "analyze" | "stack" | "warning" | "finished" | "error";
   phase?: Phase;
-  message?: string;
+  /// Stable stage code (translated on the frontend, never prose).
+  stage?: Stage;
   done?: number;
   total?: number;
-  /// Renseigné pour `kind: "warning"` : la frame écartée et la raison.
+  /// Set for `kind: "warning"`: the skipped frame and the reason code.
   name?: string;
-  reason?: string;
+  reason?: SkipReason;
   report?: StackReport;
+  /// Set for `kind: "error"`: a localized-able error code.
+  error?: JobError;
+}
+
+/// Stable stage codes emitted by the pipeline.
+export type Stage =
+  | "scanningFiles"
+  | "detectingObject"
+  | "scoringFrames"
+  | "aligning"
+  | "stacking"
+  | "enhancing"
+  | "writingOutput";
+
+/// Why a frame was skipped. Serialized as a string or a tagged object.
+export type SkipReason = "unreadable" | "missingCache" | { notEnoughFrames: { found: number; total: number } };
+
+/// A fatal pipeline error, identified by a code.
+export type JobError =
+  | { kind: "noRawFiles" }
+  | { kind: "noUsableFrames" }
+  | { kind: "notEnoughFrames"; found: number; total: number }
+  | { kind: "objectNotDetected" }
+  | { kind: "cancelled" }
+  | { kind: "other"; message: string };
+
+/// Cache state for a source folder.
+export interface CacheInfo {
+  /// Total size, in bytes.
+  size: number;
+  /// Number of frames recorded in the manifest.
+  frames: number;
+  /// Manifest entries whose TIFF no longer exists.
+  stale: number;
 }
 
 export interface CropRect {
@@ -48,10 +83,10 @@ export interface CropRect {
 }
 
 export interface SkippedFrame {
-  /// Nom du fichier source (pas le chemin complet).
+  /// Source file name (not the full path).
   name: string;
-  /// Pourquoi la frame a été écartée.
-  reason: string;
+  /// Why the frame was skipped, as a stable code.
+  reason: SkipReason;
 }
 
 export interface StackReport {

@@ -1,10 +1,11 @@
-// Écran de résultat : l'image finale en grand, les statistiques, l'inspection 1:1.
+// Result screen: the final image large, statistics, 1:1 inspection.
 //
-// Trois onglets : l'image finale, le stack brut (sans post-traitement) et une
-// comparaison côte à côte. L'App fournit les aperçus déjà chargés.
+// Three tabs: the final image, the raw stack (without post-processing) and a
+// side-by-side comparison. The App supplies the already-loaded previews.
 
 import { useState } from "react";
 import { Icon } from "./Icon";
+import { skipText, type Translate } from "./i18n";
 import type { SkippedFrame, StackReport } from "./types";
 
 type Tab = "final" | "raw" | "compare";
@@ -16,9 +17,11 @@ export function Result({
   detail,
   detailLoading,
   skipped,
+  savedAs,
   onInspect,
   onSaveAs,
   onOpenFolder,
+  t,
 }: {
   report: StackReport;
   finalPreview: string;
@@ -26,14 +29,16 @@ export function Result({
   detail: string;
   detailLoading: boolean;
   skipped: SkippedFrame[];
+  savedAs: string;
   onInspect: (evt: React.MouseEvent<HTMLImageElement>) => void;
   onSaveAs: () => void;
   onOpenFolder: () => void;
+  t: Translate;
 }) {
   const [tab, setTab] = useState<Tab>("final");
 
-  // Si le stack brut n'est pas disponible (post-traitement désactivé), on
-  // retombe sur l'image finale plutôt que d'afficher un cadre vide.
+  // If the raw stack is unavailable (post-processing off), fall back to the
+  // final image rather than showing an empty frame.
   const hasRaw = rawPreview.length > 0;
   const effectiveTab: Tab = tab === "raw" && !hasRaw ? "final" : tab;
 
@@ -52,16 +57,16 @@ export function Result({
           >
             <div style={{ minWidth: 0 }}>
               <h2 style={{ color: "var(--ok)", display: "flex", alignItems: "center", gap: 8 }}>
-                <Icon name="check" size={18} /> Stack terminé
+                <Icon name="check" size={18} /> {t("res.done")}
               </h2>
               <p className="path">{report.outputPath}</p>
             </div>
             <div className="actions">
               <button className="tbtn" onClick={onSaveAs}>
-                <Icon name="download" size={13} /> Enregistrer sous
+                <Icon name="download" size={13} /> {t("res.saveAs")}
               </button>
               <button className="btn small" onClick={onOpenFolder}>
-                <Icon name="folder-open" size={13} /> Ouvrir le dossier
+                <Icon name="folder-open" size={13} /> {t("res.openFolder")}
               </button>
             </div>
           </div>
@@ -71,25 +76,21 @@ export function Result({
           <section className="panel warn-box animate-in" style={{ marginBottom: 18 }}>
             <div className="warn-head">
               <Icon name="alert" size={16} />
-              <b>
-                {skipped.length} frame{skipped.length > 1 ? "s" : ""} écartée
-                {skipped.length > 1 ? "s" : ""}
-              </b>
+              <b>{t("res.skipped", { count: skipped.length })}</b>
             </div>
             <p className="note" style={{ marginTop: 4 }}>
-              Le reste de la session a été traité normalement. Ces fichiers sont probablement
-              corrompus ou d'un format non pris en charge.
+              {t("res.skippedNote")}
             </p>
             <ul className="warn-list">
               {skipped.slice(0, 8).map((s, i) => (
                 <li key={`${s.name}-${i}`}>
                   <b>{s.name}</b>
-                  <span>{s.reason}</span>
+                  <span>{skipText(t, s.reason)}</span>
                 </li>
               ))}
             </ul>
             {skipped.length > 8 && (
-              <p className="note">… et {skipped.length - 8} autre(s).</p>
+              <p className="note">{t("res.skippedMore", { count: skipped.length - 8 })}</p>
             )}
           </section>
         )}
@@ -99,42 +100,44 @@ export function Result({
             className={`tab ${effectiveTab === "final" ? "on" : ""}`}
             onClick={() => setTab("final")}
           >
-            Image finale
+            {t("res.tab.final")}
           </button>
           <button
             className={`tab ${effectiveTab === "raw" ? "on" : ""}`}
             onClick={() => setTab("raw")}
             disabled={!hasRaw}
-            title={hasRaw ? "" : "Post-traitement désactivé : le brut est identique."}
+            title={hasRaw ? "" : t("res.tab.rawDisabled")}
           >
-            Stack brut
+            {t("res.tab.raw")}
           </button>
           <button
             className={`tab ${effectiveTab === "compare" ? "on" : ""}`}
             onClick={() => setTab("compare")}
             disabled={!hasRaw}
           >
-            Comparer
+            {t("res.tab.compare")}
           </button>
         </div>
 
         {effectiveTab === "final" && finalPreview && (
-          <ImageView src={finalPreview} onInspect={onInspect} />
+          <ImageView src={finalPreview} onInspect={onInspect} t={t} />
         )}
 
-        {effectiveTab === "raw" && hasRaw && <ImageView src={rawPreview} onInspect={onInspect} />}
+        {effectiveTab === "raw" && hasRaw && (
+          <ImageView src={rawPreview} onInspect={onInspect} t={t} />
+        )}
 
         {effectiveTab === "compare" && hasRaw && (
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
             <div className="reveal">
-              <span className="group-title">Stack brut</span>
-              <img src={rawPreview} alt="Stack brut" style={{ imageRendering: "pixelated" }} />
+              <span className="group-title">{t("res.rawLabel")}</span>
+              <img src={rawPreview} alt={t("res.rawLabel")} style={{ imageRendering: "pixelated" }} />
             </div>
             <div className="reveal">
-              <span className="group-title">Image finale</span>
+              <span className="group-title">{t("res.finalLabel")}</span>
               <img
                 src={finalPreview}
-                alt="Image finale"
+                alt={t("res.finalLabel")}
                 onClick={onInspect}
                 style={{ cursor: "crosshair" }}
               />
@@ -145,18 +148,18 @@ export function Result({
         {!finalPreview && (
           <div className="result-hero">
             <div className="result-empty">
-              Aperçu en cours de génération…
+              {t("res.previewPending")}
               <br />
-              Le fichier TIFF est déjà enregistré sur le disque.
+              {t("res.previewPendingSub")}
             </div>
           </div>
         )}
 
-        {detailLoading && <p className="muted">Chargement de la vue 1:1…</p>}
+        {detailLoading && <p className="muted">{t("res.detailLoading")}</p>}
         {detail && (
           <div className="reveal" style={{ marginTop: 18 }}>
-            <span className="group-title">Vue 1:1 — netteté réelle</span>
-            <img src={detail} alt="Détail 1:1" style={{ maxWidth: 520 }} />
+            <span className="group-title">{t("res.detailTitle")}</span>
+            <img src={detail} alt={t("res.detailTitle")} style={{ maxWidth: 520 }} />
           </div>
         )}
       </div>
@@ -166,24 +169,22 @@ export function Result({
           <StatCard
             value={String(report.keptFrames)}
             sub={`/${report.totalFrames}`}
-            label="frames empilées"
+            label={t("res.stat.frames")}
           />
-          <StatCard value={String(Math.round(report.meanQuality * 100))} label="qualité moyenne" />
-          {report.crop && (
-            <StatCard value={`${report.crop.width}²`} label="taille du crop" />
-          )}
-          <StatCard value="16" sub="bit" label="profondeur" />
+          <StatCard value={String(Math.round(report.meanQuality * 100))} label={t("res.stat.quality")} />
+          {report.crop && <StatCard value={`${report.crop.width}²`} label={t("res.stat.crop")} />}
+          <StatCard value="16" sub="bit" label={t("res.stat.depth")} />
         </div>
 
         <div className="panel side">
-          <h3>Détails du traitement</h3>
+          <h3>{t("res.details")}</h3>
           <ul className="summary">
             <li>
-              <span>Chemin</span>
+              <span>{t("res.path")}</span>
               <b title={report.outputPath}>{shorten(report.outputPath, 22)}</b>
             </li>
             <li>
-              <span>Frames gardées</span>
+              <span>{t("res.kept")}</span>
               <b>
                 {report.keptFrames}/{report.totalFrames}
               </b>
@@ -192,32 +193,40 @@ export function Result({
         </div>
 
         <div className="panel side">
-          <h3>Et ensuite ?</h3>
-          <p className="note">
-            Le TIFF 16 bits est prêt pour Luminar, Photoshop ou GIMP. Pas de compression, pas de
-            perte.
-          </p>
-          <button className="btn small" style={{ marginTop: 14, width: "100%" }} onClick={onOpenFolder}>
-            <Icon name="folder-open" size={13} /> Révéler dans le Finder
+          <h3>{t("res.next")}</h3>
+          <p className="note">{t("res.nextNote")}</p>
+          <button
+            className="btn small"
+            style={{ marginTop: 14, width: "100%" }}
+            onClick={onOpenFolder}
+          >
+            <Icon name="folder-open" size={13} /> {t("res.reveal")}
           </button>
+          {savedAs && (
+            <p className="note" style={{ marginTop: 10 }}>
+              <Icon name="check" size={12} /> {shorten(savedAs, 30)}
+            </p>
+          )}
         </div>
       </aside>
     </div>
   );
 }
 
-/// Image cliquable pour l'inspection 1:1, avec son repère.
+/// Clickable image for 1:1 inspection, with its hint label.
 function ImageView({
   src,
   onInspect,
+  t,
 }: {
   src: string;
   onInspect: (evt: React.MouseEvent<HTMLImageElement>) => void;
+  t: Translate;
 }) {
   return (
     <div className="result-hero">
-      <img src={src} alt="Aperçu du stack" onClick={onInspect} />
-      <span className="hint">Cliquez pour inspecter à 100 %</span>
+      <img src={src} alt="" onClick={onInspect} />
+      <span className="hint">{t("res.hint.inspect")}</span>
     </div>
   );
 }
@@ -234,7 +243,7 @@ function StatCard({ value, sub, label }: { value: string; sub?: string; label: s
   );
 }
 
-/// Raccourcit un chemin trop long pour la colonne latérale.
+/// Shortens a path too long for the side column.
 function shorten(path: string, max: number): string {
   if (path.length <= max) return path;
   const file = path.split("/").pop() ?? path;

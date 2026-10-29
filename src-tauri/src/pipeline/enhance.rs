@@ -24,6 +24,7 @@
 //! ondelettes : l'image finale etait plus molle que le stack brut.
 
 use crate::model::EnhanceSettings;
+use rayon::prelude::*;
 
 /// Ameliore une image RGB 16-bit selon les reglages donnes.
 ///
@@ -42,29 +43,33 @@ pub fn enhance(rgb16: &[u16], width: usize, height: usize, s: &EnhanceSettings) 
         planes[2][i] = px[2] as f32 / 65535.0;
     }
 
-    // Analyse automatique des niveaux.
+    // Automatic level analysis.
     //
-    // Le stack brut d'une session lunaire est **tres sombre** : mesure sur une
-    // session reelle de 200 poses, les valeurs utiles vivent vers 0,13-0,41 et
-    // l'image ne contient **aucun pixel sature**. Un etirement qui mappe un
-    // percentile haut sur 1,0 appliquerait un gain enorme (x3) et **ecraserait
-    // les zones brillantes** (les rayons de Tycho) : c'est la cause de l'aplat
-    // blanc observe a l'essai.
+    // A lunar session's raw stack is **very dark**: measured on a real
+    // 200-frame session, useful values live around 0.13-0.41 and the image
+    // contains **no saturated pixel**. A stretch mapping a high percentile to
+    // 1.0 would apply a huge gain (x3) and **crush the bright areas** (Tycho's
+    // rays): that is what caused the flat white seen in testing.
     //
-    // On se contente donc d'un **etirement du blanc seul**, prudent et borne :
-    // - point noir : **inchangé** (0). Toucher au point noir assombrit les mers,
-    //   ce qui a ete constate comme nuisible : la dynamique basse est bonne
-    //   telle quelle dans le stack brut.
-    // - blanc : le maximum reel de l'image est ramene vers 0,90, jamais a 1,0.
-    //   Les hautes lumieres gardent ainsi tout leur detail.
-    let p_max = percentile(&planes[1], 1.0).max(1e-4);
+    // We therefore settle for a prudent, bounded **white-only stretch**:
+    // - black point: **unchanged** (0). Moving the black point darkens the
+    //   maria, which was observed to be harmful: low-end dynamics are fine as
+    //   they are in the raw stack.
+    // - white: the image's real high end is pulled toward 0.90, never 1.0, so
+    //   highlights keep all their detail. We use the 99.9th percentile rather
+    //   than the absolute maximum: a single hot pixel (cosmic ray, sensor
+    //   dust) would otherwise skew the whole stretch.
+    let p_max = percentile(&planes[1], 0.999).max(1e-4);
     let auto_black = 0.0f32;
     let auto_white = p_max / 0.90;
 
-    for plane in planes.iter_mut() {
-        // 1-2. Normalisation + niveaux + gamma AVANT les ondelettes.
+    // Channels are independent, so they are processed in parallel: this is the
+    // most expensive part of the pipeline's final stage (three 4024x4024
+    // planes, several separable blurs each).
+    planes.par_iter_mut().for_each(|plane| {
+        // 1-2. Normalisation + levels + gamma BEFORE the wavelets.
         apply_levels(plane, auto_black, auto_white, s.white_point, s.black_point, s.gamma);
-        // 3. Ondelettes : maintenant que l'image occupe toute la plage.
+        // 3. Wavelets: now that the image spans the full range.
         if s.wavelet_amount > 0.0 {
             wavelet_sharpen(plane, width, height, s.wavelet_amount, s.wavelet_levels);
         }
@@ -72,11 +77,11 @@ pub fn enhance(rgb16: &[u16], width: usize, height: usize, s: &EnhanceSettings) 
         if s.clahe_amount > 0.0 {
             clahe(plane, width, height, s.clahe_amount, s.clahe_tiles);
         }
-        // 5. Clarte (contraste local).
+        // 5. Clarity (local contrast).
         if s.clarity > 0.0 {
             clarity(plane, width, height, s.clarity);
         }
-    }
+    });
 
     let mut out = vec![0u16; pixels * 3];
     for i in 0..pixels {

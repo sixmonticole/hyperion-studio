@@ -15,14 +15,30 @@ pub mod stack;
 #[cfg(test)]
 mod tests;
 
-use crate::model::{CropRect, FrameInfo, Phase, Progress, Settings, SkippedFrame, StackReport};
+use crate::model::{
+    CropRect, FrameInfo, Phase, Progress, Settings, SkipReason, SkippedFrame, StackReport, Stage,
+};
 use anyhow::{Result, bail};
 use rayon::prelude::*;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 
 /// Callback de progression (envoye vers l'UI Tauri).
 pub type ProgressFn = dyn Fn(Progress) + Send + Sync;
+
+/// Sentinel returned when the user cancels. The UI matches on this string to
+/// distinguish a cancellation from a real failure.
+pub const CANCELLED: &str = "__cancelled__";
+
+/// Returns `Err` if cancellation was requested. Called at loop checkpoints so
+/// a long run stops promptly rather than finishing useless work.
+fn check_cancel(cancel: &AtomicBool) -> Result<()> {
+    if cancel.load(Ordering::Relaxed) {
+        bail!("{}", CANCELLED);
+    }
+    Ok(())
+}
 
 /// Point d'entree : traite un dossier complet et renvoie le rapport final.
 ///
@@ -33,21 +49,26 @@ pub fn run_pipeline(
     cache_dir: &Path,
     settings: &Settings,
     progress: &ProgressFn,
+    cancel: &AtomicBool,
 ) -> Result<StackReport> {
+    check_cancel(cancel)?;
+
     // --- 1. Import : liste les RAW et les dematriçe dans le cache. ---
     progress(Progress::Phase {
         phase: Phase::Importing,
-        message: "Recherche des fichiers RAW...".into(),
+        stage: Stage::ScanningFiles,
     });
 
     let raw_files = decode::list_raw_files(source_dir)?;
     if raw_files.is_empty() {
-        bail!("aucun fichier RAW trouve dans {}", source_dir.display());
+        bail!("no RAW file found in {}", source_dir.display());
     }
     let total = raw_files.len();
     std::fs::create_dir_all(cache_dir)?;
 
-    // Manifeste precedent (meme dossier source) : charge pour info/tracabilite.
+    // Previous manifest for the same source folder: used to detect sources
+    // that changed since they were cached (same name, different bytes).
+    let previous = cache::Manifest::load(cache_dir).filter(|m| m.source_dir == source_dir.to_string_lossy());
 
     // Chaque frame est importee independamment. Une frame illisible est
     // ecartee et signalee, mais **ne fait pas echouer la session** : sur une
@@ -60,43 +81,51 @@ pub fn run_pipeline(
         .par_iter()
         .enumerate()
         .map(|(index, raw_path)| -> Option<FrameInfo> {
+            // Cancellation is checked per frame: the UI stays responsive and a
+            // cancel during a 200-frame import stops within one decode.
+            if cancel.load(Ordering::Relaxed) {
+                return None;
+            }
+
             let name = raw_path
                 .file_name()
                 .and_then(|n| n.to_str())
                 .unwrap_or("?")
                 .to_string();
 
-            // Cas particulier : le fichier source est deja un TIFF 16-bit
-            // (dossier prealablement converti, ex. sortie de PIPP/Siril).
-            // On l'utilise directement, sans le recopier dans le cache.
+            // Already a 16-bit TIFF (a previously converted folder, e.g. from
+            // PIPP/Siril): used directly, without copying into the cache.
             let result = if decode::is_tiff(raw_path) {
-                // On verifie qu'il est bien lisible avant de l'integrer : un
-                // TIFF tronque casserait l'analyse en aval.
                 match decode::read_rgb16_tiff(raw_path) {
                     Ok(_) => Ok(FrameInfo::new(
                         raw_path.to_string_lossy().to_string(),
                         raw_path.to_string_lossy().to_string(),
                         index,
                     )),
-                    Err(e) => Err(e.to_string()),
+                    Err(_) => Err(SkipReason::Unreadable),
                 }
             } else {
                 let cache_path = cache::cache_path_for(cache_dir, raw_path, index);
                 let cache_str = cache_path.to_string_lossy().to_string();
+                let source_str = raw_path.to_string_lossy().to_string();
 
-                // Reutilise le cache s'il existe deja et n'est pas vide. Un
-                // fichier de taille nulle est le vestige d'une ecriture
-                // interrompue : on le re-decode plutot que de le croire valide.
-                let cache_ok = std::fs::metadata(&cache_path)
-                    .map(|m| m.len() > 0)
+                // A cached TIFF is reused only if it exists, is not empty, and
+                // its source has not changed since. Same name + different size
+                // means a different file, so the stale TIFF is rebuilt.
+                let changed = previous
+                    .as_ref()
+                    .and_then(|m| m.find_by_source(&source_str))
+                    .map(|old| {
+                        let old_len = std::fs::metadata(&old.cache_path)
+                            .map(|m| m.len())
+                            .unwrap_or(0);
+                        let src_len = std::fs::metadata(raw_path).map(|m| m.len()).unwrap_or(0);
+                        old_len != src_len
+                    })
                     .unwrap_or(false);
 
-                if cache_ok {
-                    Ok(FrameInfo::new(
-                        raw_path.to_string_lossy().to_string(),
-                        cache_str,
-                        index,
-                    ))
+                if cache::is_usable(&cache_path) && !changed {
+                    Ok(FrameInfo::new(source_str, cache_str, index))
                 } else {
                     match decode::decode_raw_to_rgb16(raw_path).and_then(|decoded| {
                         decode::write_rgb16_tiff(
@@ -106,12 +135,8 @@ pub fn run_pipeline(
                             decoded.height,
                         )
                     }) {
-                        Ok(()) => Ok(FrameInfo::new(
-                            raw_path.to_string_lossy().to_string(),
-                            cache_str,
-                            index,
-                        )),
-                        Err(e) => Err(format!("{e:#}")),
+                        Ok(()) => Ok(FrameInfo::new(source_str, cache_str, index)),
+                        Err(_) => Err(SkipReason::Unreadable),
                     }
                 }
             };
@@ -134,22 +159,18 @@ pub fn run_pipeline(
         })
         .collect();
 
+    // A cancel during import discards the partial result.
+    check_cancel(cancel)?;
+
     let skipped: Vec<SkippedFrame> = skipped.into_inner().unwrap();
     let mut frames: Vec<FrameInfo> = imported.into_iter().flatten().collect();
     frames.sort_by_key(|f| f.index);
 
     if frames.is_empty() {
-        bail!(
-            "aucune frame exploitable sur {} fichier(s) : toutes illisibles",
-            total
-        );
+        bail!("no usable frame out of {total} file(s)");
     }
     if frames.len() < 3 {
-        bail!(
-            "seulement {} frame(s) exploitable(s) sur {} : trop peu pour empiler",
-            frames.len(),
-            total
-        );
+        bail!("only {} usable frame(s) out of {total}: too few to stack", frames.len());
     }
 
     // Manifeste : trace la correspondance RAW -> TIFF et permet de reprendre.
@@ -163,52 +184,51 @@ pub fn run_pipeline(
     // --- 2. Detection de la planete sur une frame de reference. ---
     progress(Progress::Phase {
         phase: Phase::Analyzing,
-        message: "Detection de la planete...".into(),
+        stage: Stage::DetectingObject,
     });
 
     let ref_tiff = PathBuf::from(&frames[0].cache_path);
     let (_ref_rgb, full_w, full_h) = decode::read_rgb16_tiff(&ref_tiff)?;
 
-    // Boite englobante de l'objet pour dimensionner le crop.
+    // Bounding box of the object, used to size the crop.
     //
-    // **Empilement par blocs** (defaut) : chaque bloc est aligne independamment.
-    // La fenetre doit contenir l'objet dans **tous les blocs**, mais pas au long
-    // de la derive continue frame-a-frame (qui atteint des centaines de pixels) :
-    // on echantillonne une frame par bloc et on prend leur union.
+    // **Blockwise stacking** (default): each block is aligned independently.
+    // The window must contain the object in **every block**, but not across
+    // the continuous frame-to-frame drift (which reaches hundreds of pixels):
+    // so we sample one frame per block and take their union.
     //
-    // **Empilement global** : toutes les frames sont alignees sur une reference
-    // unique ; on prend l'union sur toute la session, sinon l'objet sortirait du
-    // cadre sur les frames les plus derivees.
+    // **Global stacking**: all frames are aligned on a single reference; we
+    // take the union over the whole session, otherwise the object would leave
+    // the frame on the most drifted ones.
     let detection = if settings.block_size > 0 {
         let bs = settings.block_size.max(1);
-        // Une frame de reference par bloc (la premiere de chaque bloc).
-        let by_block: Vec<FrameInfo> = frames
-            .iter()
-            .step_by(bs)
-            .cloned()
-            .collect();
+        let by_block: Vec<FrameInfo> = frames.iter().step_by(bs).cloned().collect();
         let sample = if by_block.is_empty() { &frames[..] } else { &by_block[..] };
         union_detection(sample, full_w, full_h)?
             .or_else(|| detect::detect_planet(&_ref_rgb, full_w, full_h, None))
-            .ok_or_else(|| anyhow::anyhow!("objet non detecte sur les blocs"))?
+            .ok_or_else(|| anyhow::anyhow!("object not detected on the blocks"))?
     } else {
         union_detection(&frames, full_w, full_h)?
-            .ok_or_else(|| anyhow::anyhow!("objet non detecte sur la session"))?
+            .ok_or_else(|| anyhow::anyhow!("object not detected on the session"))?
     };
 
-    // Marge de rotation de champ : un point a distance R du centre se deplace de
-    // R * angle ; on previsionne une rotation d'environ 1 degre.
+    // Field-rotation margin: a point at distance R from the centre moves by
+    // R * angle; we allow for about 1 degree of rotation.
     let rotation_margin = if settings.derotate {
         let diag = ((detection.bbox.2 - detection.bbox.0).max(detection.bbox.3 - detection.bbox.1))
             as f64;
-        diag * 0.5 * 0.02 // ~1 degre ~= 0.0175 rad, arrondi a 2%.
+        diag * 0.5 * 0.02 // ~1 degree ~= 0.0175 rad, rounded to 2%.
     } else {
         0.0
     };
     let crop: CropRect =
         detect::crop_window(&detection, full_w, full_h, settings.crop_size, rotation_margin);
 
-    // --- 3. Crop + score qualite de chaque frame, en parallele. ---
+    // --- 3. Crop + quality score for each frame, in parallel. ---
+    progress(Progress::Phase {
+        phase: Phase::Analyzing,
+        stage: Stage::ScoringFrames,
+    });
     let (crop_w, crop_h) = (crop.width, crop.height);
     let n_frames = frames.len();
     let done = Mutex::new(0usize);
@@ -216,6 +236,9 @@ pub fn run_pipeline(
     let scored: Vec<(usize, f64)> = frames
         .par_iter()
         .filter_map(|f| -> Option<(usize, f64)> {
+            if cancel.load(Ordering::Relaxed) {
+                return None;
+            }
             let name = f
                 .source_path
                 .rsplit('/')
@@ -228,17 +251,17 @@ pub fn run_pipeline(
                     let cropped = crop_rgb16(&rgb, w, h, &crop);
                     Some(quality::sharpness_score(&cropped, crop_w, crop_h))
                 }
-                Err(e) => {
-                    // Le TIFF de cache est devenu illisible : on ecarte la
-                    // frame plutot que d'interrompre toute la session.
+                Err(_) => {
+                    // The cached TIFF became unreadable: skip the frame rather
+                    // than abort the whole session.
                     progress(Progress::Warning {
                         name: name.clone(),
-                        reason: format!("{e:#}"),
+                        reason: SkipReason::MissingCache,
                     });
-                    extra_skipped
-                        .lock()
-                        .unwrap()
-                        .push(SkippedFrame { name, reason: format!("{e:#}") });
+                    extra_skipped.lock().unwrap().push(SkippedFrame {
+                        name,
+                        reason: SkipReason::MissingCache,
+                    });
                     None
                 }
             };
@@ -249,6 +272,8 @@ pub fn run_pipeline(
             score.map(|s| (f.index, s))
         })
         .collect();
+
+    check_cancel(cancel)?;
 
     // Les frames ecartees a l'analyse sortent du lot.
     let extra_skipped = extra_skipped.into_inner().unwrap();
@@ -298,13 +323,13 @@ pub fn run_pipeline(
     let kept: Vec<&FrameInfo> = frames.iter().filter(|f| f.keep).collect();
     let kept_count = kept.len();
 
-    // --- 4. Alignement + empilement. ---
+    // --- 4. Alignment + stacking. ---
     progress(Progress::Phase {
         phase: Phase::Stacking,
-        message: format!("Empilement de {kept_count} frames..."),
+        stage: Stage::Aligning,
     });
 
-    // Frame de reference pour l'alignement : la meilleure par score.
+    // Reference frame for alignment: the best by score.
     let best = frames
         .iter()
         .filter(|f| f.keep)
@@ -314,7 +339,7 @@ pub fn run_pipeline(
                 .partial_cmp(&b.quality.unwrap_or(0.0))
                 .unwrap_or(std::cmp::Ordering::Equal)
         })
-        .expect("au moins une frame gardee");
+        .expect("at least one kept frame");
 
     let (best_rgb, _, _) = decode::read_rgb16_tiff(Path::new(&best.cache_path))?;
     let best_crop = crop_rgb16(&best_rgb, full_w, full_h, &crop);
@@ -322,22 +347,22 @@ pub fn run_pipeline(
 
     let ref_lum = align::luminance(&best_crop, pixels);
 
-    // Alignement par similarite (translation + rotation + echelle) : corrige la
-    // rotation de champ, incontournable en trepied fixe sur une longue session.
+    // Similarity alignment (translation + rotation + scale): corrects field
+    // rotation, unavoidable on a fixed tripod over a long session.
     let sim_aligner = if settings.align && settings.derotate {
         Some(similarity::SimilarityAligner::new(&ref_lum, crop_w, crop_h, 300))
     } else {
         None
     };
 
-    // Alignement global par translation, en repli (ou si la derotation est off).
+    // Global translation alignment, as a fallback (or when derotation is off).
     let aligner = if settings.align && sim_aligner.is_none() {
         Some(align::Aligner::new(&ref_lum, crop_w, crop_h))
     } else {
         None
     };
 
-    // Aligneur a points locaux (AP), construit sur la reference.
+    // Local alignment points (AP), built on the reference.
     let step = if settings.ap_size > 0 {
         settings.ap_size
     } else {
@@ -349,24 +374,19 @@ pub fn run_pipeline(
         None
     };
 
-    if let Some(s) = &sim_aligner {
-        progress(Progress::Phase {
-            phase: Phase::Stacking,
-            message: format!(
-                "Empilement avec derotation ({} points de controle)...",
-                s.point_count()
-            ),
-        });
-    }
+    progress(Progress::Phase {
+        phase: Phase::Stacking,
+        stage: Stage::Stacking,
+    });
 
     let result = if settings.block_size > 0 {
-        // --- Empilement par blocs ---
+        // --- Blockwise stacking ---
         //
-        // Sur une longue session en trepied fixe, la Lune tourne et son
-        // eclairage change : empiler des frames tres eloignees dans le temps
-        // moyenne des images qui ne se superposent plus, et le resultat est
-        // flou. On empile donc par **blocs de frames consecutives** (intra-bloc
-        // la rotation est negligeable), puis on aligne et moyenne les blocs.
+        // Over a long session on a fixed tripod, the Moon rotates and its
+        // lighting changes: averaging frames far apart in time blends images
+        // that no longer overlap, and the result is blurred. So we stack
+        // **blocks of consecutive frames** (inside a block the rotation is
+        // negligible), then align and average the blocks.
         stack_blockwise(
             &kept,
             &crop,
@@ -375,29 +395,32 @@ pub fn run_pipeline(
             progress,
             kept_count,
             settings.block_size,
+            cancel,
         )?
     } else if sim_aligner.is_some() {
-        // Repli : alignement par similarite sur l'ensemble (experimental).
+        // Fallback: similarity alignment over the whole set (experimental).
         stack_global(
             &kept, &crop, pixels, settings, progress, kept_count, None, sim_aligner.as_ref(),
-            None,
+            None, cancel,
         )?
     } else {
-        // Repli : empilement global aligne (sessions courtes uniquement).
+        // Fallback: globally aligned stacking (short sessions only).
         stack_global(
             &kept, &crop, pixels, settings, progress, kept_count, aligner.as_ref(),
-            sim_aligner.as_ref(), ap_aligner.as_ref(),
+            sim_aligner.as_ref(), ap_aligner.as_ref(), cancel,
         )?
     };
 
-    // Orientation finale (rotation / miroir) : l'EXIF ne peut pas connaitre le
-    // retournement introduit par le telescope, c'est donc un reglage explicite.
+    // Final orientation (rotation / mirror): EXIF cannot know the flip
+    // introduced by the telescope, so it is an explicit setting.
     let (result, out_w, out_h) =
         align::apply_orientation(&result, crop_w, crop_h, settings.orientation);
 
-    // --- 4. Ecriture du stack brut (avant post-traitement). ---
-    // On l'ecrit uniquement si le post-traitement est active : sinon le fichier
-    // serait strictement identique a l'image finale.
+    check_cancel(cancel)?;
+
+    // --- 5. Write the raw stack (before post-processing). ---
+    // Written only when enhancement is on: otherwise the file would be
+    // strictly identical to the final image.
     let raw_path = if settings.enhance.enabled {
         let p = output::raw_output_path_for(source_dir);
         output::write_tiff(&p, &result, out_w, out_h)?;
@@ -406,21 +429,23 @@ pub fn run_pipeline(
         None
     };
 
-    // Post-traitement final (ondelettes, niveaux, CLAHE, clarte).
+    // Final post-processing (wavelets, levels, CLAHE, clarity).
     let result = if settings.enhance.enabled {
         progress(Progress::Phase {
             phase: Phase::Enhancing,
-            message: "Renforcement de la nettete et du contraste...".into(),
+            stage: Stage::Enhancing,
         });
         enhance::enhance(&result, out_w, out_h, &settings.enhance)
     } else {
         result
     };
 
-    // --- 5. Export. ---
+    check_cancel(cancel)?;
+
+    // --- 6. Export. ---
     progress(Progress::Phase {
         phase: Phase::Done,
-        message: "Ecriture du fichier final...".into(),
+        stage: Stage::WritingOutput,
     });
 
     let mean_quality = frames
@@ -435,7 +460,7 @@ pub fn run_pipeline(
     let report = StackReport {
         source_dir: source_dir.to_string_lossy().to_string(),
         output_path: out_path.to_string_lossy().to_string(),
-        raw_output_path: raw_path.map(|p| p.to_string_lossy().to_string()),
+        raw_output_path: raw_path.as_ref().map(|p| p.to_string_lossy().to_string()),
         total_frames: total,
         kept_frames: kept_count,
         mean_quality,
@@ -445,6 +470,12 @@ pub fn run_pipeline(
     };
 
     output::write_output(&out_path, &result, out_w, out_h, &report)?;
+
+    // The raw stack gets its own JSON report: it is a real deliverable, not a
+    // throwaway preview, and it should be traceable on its own.
+    if let Some(rp) = &raw_path {
+        output::write_report(rp, &report)?;
+    }
 
     progress(Progress::Finished {
         report: Box::new(report.clone()),
@@ -527,28 +558,28 @@ fn stack_blockwise(
     progress: &ProgressFn,
     kept_count: usize,
     block_size: usize,
+    cancel: &AtomicBool,
 ) -> Result<Vec<u16>> {
     let (crop_w, crop_h) = (crop.width, crop.height);
 
-    // Ordre temporel : les blocs doivent etre des **groupes consecutifs**.
+    // Temporal order: blocks must be **consecutive** groups.
     let mut order: Vec<&FrameInfo> = kept.to_vec();
     order.sort_by_key(|f| f.index);
 
     let n_blocks = order.len().div_ceil(block_size).max(1);
     progress(Progress::Phase {
         phase: Phase::Stacking,
-        message: format!(
-            "Empilement par blocs : {n_blocks} blocs de {block_size} frames..."
-        ),
+        stage: Stage::Stacking,
     });
 
-    // Empile chaque bloc (alignement interne sur sa meilleure frame).
+    // Stack each block (internal alignment on its best frame).
     let total_for_progress = kept_count.max(1);
     let done_blocks = Mutex::new(0usize);
     let mut blocks: Vec<Vec<u16>> = Vec::with_capacity(n_blocks);
 
     for chunk in order.chunks(block_size) {
-        // Reference du bloc : sa meilleure frame par score.
+        check_cancel(cancel)?;
+        // Block reference: its best frame by score.
         let best = chunk
             .iter()
             .max_by(|a, b| {
@@ -629,6 +660,7 @@ fn stack_global(
     aligner: Option<&align::Aligner>,
     sim_aligner: Option<&similarity::SimilarityAligner>,
     ap_aligner: Option<&ap::ApAligner>,
+    cancel: &AtomicBool,
 ) -> Result<Vec<u16>> {
     let (crop_w, crop_h) = (crop.width, crop.height);
     let mut acc = stack::Accumulator::new(crop_w, crop_h);
@@ -636,6 +668,11 @@ fn stack_global(
     let acc_lock = Mutex::new(&mut acc);
 
     kept.par_iter().try_for_each(|f| -> Result<()> {
+        // Cancellation aborts the loop promptly; the partial accumulator is
+        // discarded by the caller.
+        if cancel.load(Ordering::Relaxed) {
+            bail!("{}", CANCELLED);
+        }
         let (rgb, w, h) = decode::read_rgb16_tiff(Path::new(&f.cache_path))?;
         let cropped = crop_rgb16(&rgb, w, h, crop);
         let lum = align::luminance(&cropped, pixels);

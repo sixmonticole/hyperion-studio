@@ -6,12 +6,14 @@ import { listen } from "@tauri-apps/api/event";
 import {
   DEFAULT_SETTINGS,
   mergeSettings,
+  type CacheInfo,
   type Phase,
   type Progress,
   type ScanResult,
   type Settings,
   type SkippedFrame,
   type StackReport,
+  type Stage,
 } from "./types";
 import { Icon } from "./Icon";
 import { Logo } from "./Logo";
@@ -20,17 +22,18 @@ import { SettingsDrawer } from "./SettingsDrawer";
 import { Running } from "./Running";
 import { Result } from "./Result";
 import { useTheme } from "./useTheme";
+import { errorText, formatBytes, LANGS, useI18n, type Lang } from "./i18n";
 import "./App.css";
 
-/// Détecte si l'on tourne dans une fenêtre Tauri (l'IPC est sinon absent,
-/// ce qui permet de prévisualiser l'UI dans un navigateur).
+/// Whether we are running inside a Tauri window (IPC is otherwise absent,
+/// which allows previewing the UI in a browser).
 const IN_TAURI = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
-/// Mode démo : permet de visualiser les écrans (traitement, résultat) dans un
-/// navigateur, sans backend. Actif seulement en développement, via l'URL :
-///   ?demo=running   -> simule un empilement en cours
-///   ?demo=result    -> affiche un écran de résultat factice
-/// Aucun effet dans l'application empaquetée.
+/// Demo mode: lets the screens (running, result) be shown in a browser without
+/// a backend. Active in development only, via the URL:
+///   ?demo=running   -> simulates a run in progress
+///   ?demo=result    -> shows a fake result screen
+/// No effect in the packaged app.
 const DEMO: "off" | "running" | "result" = (() => {
   if (!import.meta.env.DEV || typeof window === "undefined") return "off";
   const d = new URLSearchParams(window.location.search).get("demo");
@@ -38,19 +41,17 @@ const DEMO: "off" | "running" | "result" = (() => {
 })();
 
 const DEMO_REPORT: StackReport = {
-  sourceDir: "/Users/simon/Documents/Photo/lune 25 oct",
-  outputPath: "/Users/simon/Documents/Photo/lune 25 oct/hyperion_out/lune 25 oct_stack.tif",
-  rawOutputPath:
-    "/Users/simon/Documents/Photo/lune 25 oct/hyperion_out/lune 25 oct_stack_brut.tif",
+  sourceDir: "/Users/simon/Pictures/Moon session",
+  outputPath: "/Users/simon/Pictures/Moon session/hyperion_out/moon session_stack.tif",
+  rawOutputPath: "/Users/simon/Pictures/Moon session/hyperion_out/moon session_stack_raw.tif",
   totalFrames: 200,
   keptFrames: 200,
   meanQuality: 0.26,
   crop: { x: 120, y: 140, width: 3620, height: 3620 },
 };
 
-/// Aperçu factice : un disque lunaire dessiné en SVG, encodé en data URL.
-/// On utilise des couleurs littérales (pas de `#` dans le SVG) pour éviter
-/// tout double-encodage.
+/// Fake preview: a lunar disc drawn in SVG, encoded as a data URL.
+/// Colors are literal (no `#` in the SVG) to avoid double-encoding.
 const DEMO_PREVIEW = `data:image/svg+xml;utf8,${encodeURIComponent(`
 <svg xmlns='http://www.w3.org/2000/svg' width='900' height='620'>
   <defs>
@@ -65,35 +66,54 @@ const DEMO_PREVIEW = `data:image/svg+xml;utf8,${encodeURIComponent(`
   <circle cx='360' cy='392' r='12' fill='rgb(184,178,163)' opacity='.4'/>
 </svg>`)}`;
 
+const SETTINGS_KEY = "hyperion:settings";
+
+/// Loads persisted settings, merged over the defaults so a partial or older
+/// saved object can never break the app.
+function loadSettings(): Settings {
+  try {
+    const raw = window.localStorage.getItem(SETTINGS_KEY);
+    if (!raw) return DEFAULT_SETTINGS;
+    return mergeSettings(JSON.parse(raw) as Partial<Settings>);
+  } catch {
+    return DEFAULT_SETTINGS;
+  }
+}
+
 function App() {
-  // --- État du dossier et du scan ---
+  // --- Folder & scan state ---
   const [sourceDir, setSourceDir] = useState("");
   const [scan, setScan] = useState<ScanResult | null>(null);
   const [scanning, setScanning] = useState(false);
+  const [cacheInfo, setCacheInfo] = useState<CacheInfo | null>(null);
+  const [cacheMsg, setCacheMsg] = useState("");
 
-  // --- État du traitement ---
+  // --- Run state ---
   const [phase, setPhase] = useState<Phase>("idle");
-  const [message, setMessage] = useState("");
+  const [stage, setStage] = useState<Stage>("scanningFiles");
   const [done, setDone] = useState(0);
   const [total, setTotal] = useState(0);
   const [report, setReport] = useState<StackReport | null>(null);
   const [error, setError] = useState("");
-  const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
-  // Frames écartées pendant le traitement (illisibles, corrompues...).
+  const [cancelling, setCancelling] = useState(false);
+  const [settings, setSettings] = useState<Settings>(loadSettings);
+  // Frames skipped during processing (unreadable, corrupt...).
   const [warnings, setWarnings] = useState<SkippedFrame[]>([]);
 
-  // --- État de l'interface ---
-  const [step, setStep] = useState<0 | 1>(0); // 0 = dossier, 1 = réglages
+  // --- UI state ---
+  const [step, setStep] = useState<0 | 1>(0); // 0 = folder, 1 = settings
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { theme, toggle: toggleTheme } = useTheme();
+  const { lang, setLang, t } = useI18n();
 
-  // --- Aperçus ---
+  // --- Previews ---
   const [preview, setPreview] = useState("");
   const [rawPreview, setRawPreview] = useState("");
   const [detail, setDetail] = useState("");
   const [detailLoading, setDetailLoading] = useState(false);
+  const [savedAs, setSavedAs] = useState("");
 
-  // --- Chronomètre ---
+  // --- Timer ---
   const [elapsed, setElapsed] = useState(0);
   const startedAt = useRef<number | null>(null);
 
@@ -103,7 +123,16 @@ function App() {
     phase === "stacking" ||
     phase === "enhancing";
 
-  // Chronomètre pendant le traitement.
+  // Persist settings whenever they change.
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    } catch {
+      // Storage unavailable: settings stay for the session only.
+    }
+  }, [settings]);
+
+  // Timer during processing.
   useEffect(() => {
     if (!running) {
       startedAt.current = null;
@@ -117,8 +146,8 @@ function App() {
     return () => window.clearInterval(id);
   }, [running]);
 
-  // --- Mode démo (développement uniquement) --------------------------------
-  // Simule un empilement pour visualiser les écrans sans backend.
+  // --- Demo mode (development only) ----------------------------------------
+  // Simulates a run to show the screens without a backend.
   useEffect(() => {
     if (DEMO === "off") return;
 
@@ -138,9 +167,9 @@ function App() {
       return;
     }
 
-    // DEMO === "running" : on déroule les phases puis on termine.
-    // Le compteur `done` suit l'étape courante, comme dans un vrai traitement :
-    // il repart à zéro au début de chaque étape et atteint le total à la fin.
+    // DEMO === "running": play the phases then finish. The counter follows the
+    // current stage, as in a real run: it resets at each stage start and
+    // reaches the total at its end.
     setSourceDir(DEMO_REPORT.sourceDir);
     setScan({
       count: 200,
@@ -151,24 +180,24 @@ function App() {
     setTotal(200);
 
     let interval = 0;
-    // Fait grimper `done` vers `target` pendant `durationMs`, puis enchaîne.
+    // Ramps `done` toward `target` over `durationMs`, then chains on.
     const runPhase = (
-      phase: Phase,
-      message: string,
+      ph: Phase,
+      st: Stage,
       from: number,
       target: number,
       durationMs: number,
       next: () => void,
     ) => {
-      setPhase(phase);
-      setMessage(message);
+      setPhase(ph);
+      setStage(st);
       setDone(from);
       const start = Date.now();
       window.clearInterval(interval);
       interval = window.setInterval(() => {
-        const t = Math.min(1, (Date.now() - start) / durationMs);
-        setDone(Math.round(from + (target - from) * t));
-        if (t >= 1) {
+        const p = Math.min(1, (Date.now() - start) / durationMs);
+        setDone(Math.round(from + (target - from) * p));
+        if (p >= 1) {
           window.clearInterval(interval);
           next();
         }
@@ -180,7 +209,7 @@ function App() {
       timers.push(
         window.setTimeout(() => {
           setDone(0);
-          runPhase("done", "Écriture du fichier final…", 0, 200, 700, () => {});
+          runPhase("done", "writingOutput", 0, 200, 700, () => {});
           window.setTimeout(() => {
             setReport(DEMO_REPORT);
             setPreview(DEMO_PREVIEW);
@@ -190,14 +219,10 @@ function App() {
       );
     };
 
-    const afterStack = () =>
-      runPhase("enhancing", "Renforcement de la netteté et du contraste…", 0, 0, 1400, afterEnhance);
+    const afterStack = () => runPhase("enhancing", "enhancing", 0, 0, 1400, afterEnhance);
+    const afterAnalyze = () => runPhase("stacking", "stacking", 0, 200, 3200, afterStack);
 
-    // L'analyse puis l'empilement : le compteur avance sur les images.
-    const afterAnalyze = () =>
-      runPhase("stacking", "Empilement par blocs : 11 blocs de 10 frames…", 0, 200, 3200, afterStack);
-
-    runPhase("importing", "Décodage des RAW vers le cache 16 bits…", 0, 200, 2200, afterAnalyze);
+    runPhase("importing", "scanningFiles", 0, 200, 2200, afterAnalyze);
 
     return () => {
       window.clearInterval(interval);
@@ -205,7 +230,7 @@ function App() {
     };
   }, []);
 
-  // Écoute des événements de progression.
+  // Progress events.
   useEffect(() => {
     if (!IN_TAURI) return;
     let disposed = false;
@@ -214,20 +239,20 @@ function App() {
       const p = event.payload;
       if (p.kind === "phase" && p.phase) {
         setPhase(p.phase);
-        setMessage(p.message ?? "");
+        if (p.stage) setStage(p.stage);
       } else if (p.kind === "import" || p.kind === "analyze" || p.kind === "stack") {
         setDone(p.done ?? 0);
         setTotal(p.total ?? 0);
       } else if (p.kind === "warning" && p.name) {
-        // Une frame écartée : on la mémorise sans interrompre le traitement.
         const name = p.name;
-        setWarnings((w) => [...w, { name, reason: p.reason ?? "illisible" }]);
+        const reason = p.reason ?? "unreadable";
+        setWarnings((w) => [...w, { name, reason }]);
       } else if (p.kind === "finished" && p.report) {
         setReport(p.report);
         setPhase("done");
-        setMessage("Terminé");
-      } else if (p.kind === "error") {
-        setError(p.message ?? "Erreur inconnue");
+        setStage("writingOutput");
+      } else if (p.kind === "error" && p.error) {
+        setError(errorText(t, p.error));
         setPhase("failed");
       }
     })
@@ -240,9 +265,10 @@ function App() {
       disposed = true;
       unlisten?.();
     };
-  }, []);
+    // Re-subscribe when the language changes so error text uses the new one.
+  }, [t]);
 
-  // Charge un aperçu du stack (image entière ou zone 1:1).
+  // Loads a stack preview (whole image or 1:1 region).
   const loadPreview = useCallback(
     async (
       tifPath: string,
@@ -261,22 +287,34 @@ function App() {
         else if (kind === "raw") setRawPreview(url);
         else setPreview(url);
       } catch (e) {
-        setError(String(e));
+        setError(errorText(t, String(e)));
       } finally {
         if (kind === "detail") setDetailLoading(false);
       }
     },
-    [],
+    [t],
   );
+
+  // Refreshes cache information for the current folder.
+  const refreshCache = useCallback(async () => {
+    if (!sourceDir || !IN_TAURI) return;
+    try {
+      const info = await invoke<CacheInfo>("cache_info", { sourceDir });
+      setCacheInfo(info);
+    } catch {
+      setCacheInfo(null);
+    }
+  }, [sourceDir]);
 
   const pickFolder = useCallback(async () => {
     setError("");
+    setCacheMsg("");
     setReport(null);
     setPreview("");
     setRawPreview("");
     setDetail("");
     if (!IN_TAURI) {
-      setError("Sélection de dossier indisponible hors de l'application.");
+      setError("Folder selection is unavailable outside the app.");
       return;
     }
     let selected: string | string[] | null = null;
@@ -296,26 +334,43 @@ function App() {
       setScan(res);
       if (res.preview?.error) setError(res.preview.error);
       setStep(1);
+      // Warn early if the cache will not fit on disk.
+      try {
+        const info = await invoke<CacheInfo>("cache_info", { sourceDir: selected });
+        setCacheInfo(info);
+        const need = res.count * 145 * 1024 * 1024; // ~145 MB per frame
+        const free = await invoke<number>("available_space", { path: selected }).catch(() => null);
+        if (typeof free === "number" && free > 0 && need > free) {
+          setCacheMsg(
+            t("cache.diskWarn", { need: formatBytes(need, lang), free: formatBytes(free, lang) }),
+          );
+        }
+      } catch {
+        setCacheInfo(null);
+      }
     } catch (e) {
-      setError(String(e));
+      setError(errorText(t, String(e)));
     } finally {
       setScanning(false);
     }
-  }, []);
+  }, [t, lang]);
 
   const runStack = useCallback(async () => {
     if (!sourceDir) return;
     setError("");
+    setCacheMsg("");
     setReport(null);
     setWarnings([]);
+    setSavedAs("");
     setPreview("");
     setRawPreview("");
     setDetail("");
     setDone(0);
     setTotal(scan?.count ?? 0);
     setDrawerOpen(false);
+    setCancelling(false);
     setPhase("importing");
-    setMessage("Préparation...");
+    setStage("scanningFiles");
     try {
       const res = await invoke<StackReport>("run_stack", {
         sourceDir,
@@ -324,15 +379,33 @@ function App() {
       });
       setReport(res);
       setPhase("done");
+      clearPreviews();
       loadPreview(res.outputPath, "full");
-      // Si un stack brut existe, on charge aussi son aperçu pour l'onglet
-      // de comparaison.
       if (res.rawOutputPath) loadPreview(res.rawOutputPath, "raw");
+      refreshCache();
     } catch (e) {
-      setError(String(e));
+      const msg = String(e);
+      setError(errorText(t, msg));
       setPhase("failed");
+      setCancelling(false);
     }
-  }, [sourceDir, settings, scan, loadPreview]);
+  }, [sourceDir, settings, scan, loadPreview, refreshCache, t]);
+
+  const clearPreviews = () => {
+    setPreview("");
+    setRawPreview("");
+    setDetail("");
+  };
+
+  const cancel = useCallback(async () => {
+    if (!IN_TAURI) return;
+    setCancelling(true);
+    try {
+      await invoke("cancel_stack");
+    } catch {
+      setCancelling(false);
+    }
+  }, []);
 
   const pickDetail = useCallback(
     (evt: React.MouseEvent<HTMLImageElement>) => {
@@ -353,25 +426,20 @@ function App() {
     if (!report || !IN_TAURI) return;
     try {
       const base = report.outputPath.split("/").pop() ?? "stack.tif";
-      // On propose un nom libre par défaut : le dossier de sortie contient
-      // déjà le stack, et le backend refuse d'écraser un fichier existant.
+      // Offer a free default name: the output folder already contains the
+      // stack, and the backend refuses to overwrite an existing file.
       const dest = await save({
-        defaultPath: base.replace(/\.tiff?$/i, "_copie.tif"),
-        filters: [{ name: "TIFF 16 bits", extensions: ["tif", "tiff"] }],
+        defaultPath: base.replace(/\.tiff?$/i, "_copy.tif"),
+        filters: [{ name: "16-bit TIFF", extensions: ["tif", "tiff"] }],
       });
       if (typeof dest !== "string") return;
       await invoke("save_copy", { from: report.outputPath, to: dest });
       setError("");
+      setSavedAs(dest);
     } catch (e) {
-      const msg = String(e);
-      // Le backend refuse l'écrasement : on explique quoi faire.
-      if (msg.includes("existe deja")) {
-        setError("Un fichier porte déjà ce nom. Choisissez un autre nom.");
-      } else {
-        setError(msg);
-      }
+      setError(errorText(t, String(e)));
     }
-  }, [report]);
+  }, [report, t]);
 
   const openOutputFolder = useCallback(async () => {
     if (!report || !IN_TAURI) return;
@@ -382,21 +450,46 @@ function App() {
     }
   }, [report]);
 
-  // Un nouveau traitement remet le parcours au début.
+  const clearCache = useCallback(async () => {
+    if (!sourceDir || !IN_TAURI) return;
+    try {
+      const freed = await invoke<number>("clear_cache", { sourceDir });
+      setCacheMsg(t("cache.freed", { size: formatBytes(freed, lang) }));
+      refreshCache();
+    } catch (e) {
+      setError(String(e));
+    }
+  }, [sourceDir, t, lang, refreshCache]);
+
+  const pruneCache = useCallback(async () => {
+    if (!sourceDir || !IN_TAURI) return;
+    try {
+      const removed = await invoke<number>("prune_cache", { sourceDir });
+      setCacheMsg(t("cache.pruned", { count: removed }));
+      refreshCache();
+    } catch (e) {
+      setError(String(e));
+    }
+  }, [sourceDir, t, refreshCache]);
+
+  // A new run resets the flow to the start.
   const restart = useCallback(() => {
     setReport(null);
     setWarnings([]);
+    setSavedAs("");
     setPreview("");
     setRawPreview("");
     setDetail("");
     setPhase("idle");
     setError("");
+    setCacheMsg("");
     setStep(0);
     setSourceDir("");
     setScan(null);
+    setCacheInfo(null);
   }, []);
 
-  // --- Rendu -------------------------------------------------------------
+  // --- Render ---------------------------------------------------------------
   const inProgress = running || phase === "failed";
   const finished = report && phase === "done";
 
@@ -408,27 +501,30 @@ function App() {
             <Logo size={44} />
           </div>
           <div className="brand-text">
-            <h1>Hyperion Studio</h1>
-            <div className="brand-sub">Observatoire · Empilement astro</div>
+            <h1>{t("app.brand")}</h1>
+            <div className="brand-sub">{t("app.tagline")}</div>
           </div>
         </div>
         <div className="header-right">
           {scan && !inProgress && !finished && (
             <div className="header-meta">
-              <span className="badge">{scan.count} images</span>
-              {scan.cached > 0 && <span className="badge info">cache prêt</span>}
+              <span className="badge">
+                {scan.count} {t("run.frames")}
+              </span>
+              {scan.cached > 0 && <span className="badge info">cache</span>}
             </div>
           )}
           {finished && (
             <span className="badge ok">
-              <Icon name="check" size={12} /> terminé
+              <Icon name="check" size={12} /> {t("res.done")}
             </span>
           )}
+          <LangSwitch lang={lang} setLang={setLang} label={t("app.lang.label")} />
           <button
             className="theme-toggle"
             onClick={toggleTheme}
-            title={theme === "dark" ? "Passer en thème clair" : "Passer en thème sombre"}
-            aria-label="Changer de thème"
+            title={theme === "dark" ? t("app.theme.toLight") : t("app.theme.toDark")}
+            aria-label={t("app.theme.label")}
           >
             <Icon name={theme === "dark" ? "sun" : "moon"} size={16} />
           </button>
@@ -442,12 +538,28 @@ function App() {
         </section>
       )}
 
-      {/* --- Écran 1 : traitement en cours --- */}
-      {inProgress && (
-        <Running phase={phase} message={message} done={done} total={total} elapsed={elapsed} />
+      {cacheMsg && (
+        <section className="panel info-box" style={{ marginBottom: 18 }}>
+          <Icon name="folder" size={16} />
+          <span>{cacheMsg}</span>
+        </section>
       )}
 
-      {/* --- Écran 2 : résultat --- */}
+      {/* --- Screen 1: processing --- */}
+      {inProgress && (
+        <Running
+          phase={phase}
+          stage={stage}
+          done={done}
+          total={total}
+          elapsed={elapsed}
+          cancelling={cancelling}
+          onCancel={cancel}
+          t={t}
+        />
+      )}
+
+      {/* --- Screen 2: result --- */}
       {finished && (
         <Result
           report={report}
@@ -456,13 +568,15 @@ function App() {
           detail={detail}
           detailLoading={detailLoading}
           skipped={warnings}
+          savedAs={savedAs}
           onInspect={pickDetail}
           onSaveAs={saveAs}
           onOpenFolder={openOutputFolder}
+          t={t}
         />
       )}
 
-      {/* --- Écran 3 : assistant pas à pas --- */}
+      {/* --- Screen 3: step-by-step wizard --- */}
       {!inProgress && !finished && (
         <div className="wizard">
           <div className="wiz-steps">
@@ -471,9 +585,9 @@ function App() {
                 {step === 0 ? "01" : <Icon name="check" size={14} />}
               </span>
               <span className="lbl">
-                <b>Dossier</b>
+                <b>{t("wiz.step.folder")}</b>
                 <span>
-                  {scan ? `${scan.count} images` : sourceDir ? "—" : "à choisir"}
+                  {scan ? `${scan.count} ${t("run.frames")}` : sourceDir ? "—" : t("wiz.step.folder.sub")}
                 </span>
               </span>
               <span className="rail" />
@@ -481,38 +595,33 @@ function App() {
             <div className={`wiz-step ${step === 1 ? "active" : "pending"}`}>
               <span className="bullet">02</span>
               <span className="lbl">
-                <b>Réglages</b>
-                <span>à ajuster</span>
+                <b>{t("wiz.step.settings")}</b>
+                <span>{t("wiz.step.settings.sub")}</span>
               </span>
               <span className="rail" />
             </div>
             <div className="wiz-step">
               <span className="bullet">03</span>
               <span className="lbl">
-                <b>Traitement</b>
-                <span>puis résultat</span>
+                <b>{t("wiz.step.processing")}</b>
+                <span>{t("wiz.step.processing.sub")}</span>
               </span>
             </div>
           </div>
 
-          {/* Étape 1 : choisir le dossier */}
+          {/* Step 1: choose the folder */}
           {step === 0 && (
             <div className="wiz-body">
-              <div className="wiz-title">Quel dossier empiler ?</div>
-              <p className="wiz-desc">
-                Choisissez un dossier de RAW (ARW, NEF, CR2…) ou de TIFF 16 bits déjà convertis.
-                Tout le dossier sera traité comme une seule session.
-              </p>
+              <div className="wiz-title">{t("wiz.folder.title")}</div>
+              <p className="wiz-desc">{t("wiz.folder.desc")}</p>
 
               <section className={`drop ${sourceDir ? "filled" : ""}`} onClick={pickFolder}>
                 <div className="drop-icon">
                   <Icon name="folder" size={30} />
                 </div>
-                <h2>{sourceDir ? "Dossier sélectionné" : "Choisir un dossier d'images"}</h2>
-                <p className="path">
-                  {sourceDir || "Cliquez pour parcourir vos fichiers"}
-                </p>
-                {scanning && <p className="muted">Analyse du dossier…</p>}
+                <h2>{sourceDir ? t("wiz.folder.picked") : t("wiz.folder.pick")}</h2>
+                <p className="path">{sourceDir || t("wiz.folder.hintClick")}</p>
+                {scanning && <p className="muted">{t("wiz.folder.scanning")}</p>}
                 {scan && (
                   <div className="scan-meta">
                     {scan.preview?.model && (
@@ -527,13 +636,13 @@ function App() {
                     )}
                     {scan.preview?.planetDetected ? (
                       <span className="badge ok">
-                        <Icon name="check" size={12} /> objet détecté (~
+                        <Icon name="check" size={12} /> {t("wiz.folder.objectDetected")} (~
                         {Math.round(scan.preview.planetRadius ?? 0)} px)
                       </span>
                     ) : (
                       scan.preview && (
                         <span className="badge warn">
-                          <Icon name="alert" size={12} /> objet non détecté
+                          <Icon name="alert" size={12} /> {t("wiz.folder.noObject")}
                         </span>
                       )
                     )}
@@ -543,28 +652,25 @@ function App() {
 
               <div className="wiz-foot">
                 <span className="hint">
-                  {scan ? "Dossier analysé, tout est prêt." : "Sélectionnez un dossier pour continuer."}
+                  {scan ? t("wiz.folder.ready") : t("wiz.folder.selectFirst")}
                 </span>
                 <button className="btn primary" disabled={!sourceDir} onClick={() => setStep(1)}>
-                  Continuer <Icon name="arrow-right" size={15} />
+                  {t("wiz.continue")} <Icon name="arrow-right" size={15} />
                 </button>
               </div>
             </div>
           )}
 
-          {/* Étape 2 : réglages */}
+          {/* Step 2: settings */}
           {step === 1 && (
             <div className="wiz-body">
-              <div className="wiz-title">Réglages de l'empilement</div>
-              <p className="wiz-desc">
-                Tout fonctionne déjà sans rien toucher. Ajustez seulement si vous le souhaitez, ou
-                ouvrez le volet pour les réglages avancés.
-              </p>
+              <div className="wiz-title">{t("wiz.settings.title")}</div>
+              <p className="wiz-desc">{t("wiz.settings.desc")}</p>
 
               <div className="group" style={{ marginTop: 0, borderTop: "none", paddingTop: 0 }}>
                 <div className="group-head">
-                  <span className="group-title">Orientation</span>
-                  <span className="hint">l'EXIF ignore le retournement du télescope</span>
+                  <span className="group-title">{t("wiz.settings.orientation")}</span>
+                  <span className="hint">{t("wiz.settings.orientationHint")}</span>
                 </div>
                 <div className="chips">
                   <button
@@ -576,21 +682,18 @@ function App() {
                       }))
                     }
                   >
-                    <Icon name="rotate" size={13} /> 90°
+                    <Icon name="rotate" size={13} /> {t("orient.90")}
                   </button>
                   <button
                     className="chip"
                     onClick={() =>
                       setSettings((s) => ({
                         ...s,
-                        orientation: {
-                          ...s.orientation,
-                          rotate: (s.orientation.rotate + 180) % 360,
-                        },
+                        orientation: { ...s.orientation, rotate: (s.orientation.rotate + 180) % 360 },
                       }))
                     }
                   >
-                    <Icon name="rotate" size={13} /> 180°
+                    <Icon name="rotate" size={13} /> {t("orient.180")}
                   </button>
                   <button
                     className={`chip ${settings.orientation.flipH ? "on" : ""}`}
@@ -601,7 +704,7 @@ function App() {
                       }))
                     }
                   >
-                    <Icon name="flip-h" size={13} /> Miroir H
+                    <Icon name="flip-h" size={13} /> {t("orient.flipH")}
                   </button>
                   <button
                     className={`chip ${settings.orientation.flipV ? "on" : ""}`}
@@ -612,7 +715,7 @@ function App() {
                       }))
                     }
                   >
-                    <Icon name="flip-v" size={13} /> Miroir V
+                    <Icon name="flip-v" size={13} /> {t("orient.flipV")}
                   </button>
                   <button
                     className="chip"
@@ -623,54 +726,58 @@ function App() {
                       }))
                     }
                   >
-                    <Icon name="reset" size={13} /> Réinitialiser
+                    <Icon name="reset" size={13} /> {t("orient.reset")}
                   </button>
                 </div>
               </div>
 
               <div className="group">
                 <div className="group-head">
-                  <span className="group-title">Post-traitement</span>
+                  <span className="group-title">{t("wiz.settings.post")}</span>
                 </div>
                 <Toggle
                   checked={settings.enhance.enabled}
                   onChange={(v) =>
                     setSettings((s) => ({ ...s, enhance: { ...s.enhance, enabled: v } }))
                   }
-                  label="Améliorer l'image finale"
-                  description="Netteté par ondelettes et contraste. Désactivé = stack brut."
+                  label={t("wiz.settings.postLabel")}
+                  description={t("wiz.settings.postDesc")}
                 />
               </div>
 
               <div className="recap">
                 <div className="recap-row">
-                  <span>Frames conservées</span>
+                  <span>{t("wiz.recap.keep")}</span>
                   <b>{Math.round(settings.keepFraction * 100)} %</b>
                 </div>
                 <div className="recap-row">
-                  <span>Empilement par blocs</span>
-                  <b>{settings.blockSize > 0 ? `${settings.blockSize} frames` : "global"}</b>
+                  <span>{t("wiz.recap.blocks")}</span>
+                  <b>
+                    {settings.blockSize > 0
+                      ? `${settings.blockSize} ${t("run.frames")}`
+                      : t("wiz.recap.global")}
+                  </b>
                 </div>
                 <div className="recap-row">
-                  <span>Alignement</span>
-                  <b>{settings.align ? "activé" : "désactivé"}</b>
+                  <span>{t("wiz.recap.align")}</span>
+                  <b>{settings.align ? t("wiz.recap.on") : t("wiz.recap.off")}</b>
                 </div>
                 <div className="recap-row">
-                  <span>Crop</span>
-                  <b>{settings.cropSize === 0 ? "automatique" : `${settings.cropSize} px`}</b>
+                  <span>{t("wiz.recap.crop")}</span>
+                  <b>{settings.cropSize === 0 ? t("wiz.recap.auto") : `${settings.cropSize} px`}</b>
                 </div>
               </div>
 
               <div className="wiz-foot">
                 <button className="tbtn" onClick={() => setStep(0)}>
-                  <Icon name="arrow-left" size={15} /> Retour
+                  <Icon name="arrow-left" size={15} /> {t("wiz.back")}
                 </button>
                 <div className="actions">
                   <button className="tbtn" onClick={() => setDrawerOpen(true)}>
-                    <Icon name="sliders" size={15} /> Tous les réglages
+                    <Icon name="sliders" size={15} /> {t("wiz.allSettings")}
                   </button>
                   <button className="btn primary" onClick={runStack}>
-                    <Icon name="play" size={15} /> Lancer le traitement
+                    <Icon name="play" size={15} /> {t("wiz.run")}
                   </button>
                 </div>
               </div>
@@ -679,23 +786,54 @@ function App() {
         </div>
       )}
 
-      {/* --- Volet de réglages --- */}
+      {/* --- Settings drawer --- */}
       {drawerOpen && (
         <SettingsDrawer
           settings={settings}
+          cacheInfo={cacheInfo}
+          onCacheChange={refreshCache}
+          onClearCache={clearCache}
+          onPruneCache={pruneCache}
+          lang={lang}
           onChange={setSettings}
           onClose={() => setDrawerOpen(false)}
+          t={t}
         />
       )}
 
-      {/* Après un résultat, permet de recommencer. */}
+      {/* After a result, allow starting over. */}
       {finished && (
         <div style={{ marginTop: 24, display: "flex", justifyContent: "center" }}>
           <button className="tbtn" onClick={restart}>
-            <Icon name="reset" size={15} /> Traiter un autre dossier
+            <Icon name="reset" size={15} /> {t("res.restart")}
           </button>
         </div>
       )}
+    </div>
+  );
+}
+
+/// Compact language switcher in the header (FR / EN).
+function LangSwitch({
+  lang,
+  setLang,
+  label,
+}: {
+  lang: Lang;
+  setLang: (l: Lang) => void;
+  label: string;
+}) {
+  return (
+    <div className="lang-switch" role="group" aria-label={label} title={label}>
+      {LANGS.map((l) => (
+        <button
+          key={l.code}
+          className={`lang-btn ${lang === l.code ? "on" : ""}`}
+          onClick={() => setLang(l.code)}
+        >
+          {l.code.toUpperCase()}
+        </button>
+      ))}
     </div>
   );
 }

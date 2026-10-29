@@ -41,7 +41,7 @@ pub fn write_tiff(path: &Path, rgb16: &[u16], width: usize, height: usize) -> Re
     write_rgb16_tiff(path, rgb16, width, height)
 }
 
-/// Ecrit le stack final et le rapport associe (a cote du TIFF).
+/// Writes the final stack and its companion report (next to the TIFF).
 pub fn write_output(
     tiff_path: &Path,
     rgb16: &[u16],
@@ -51,15 +51,22 @@ pub fn write_output(
 ) -> Result<()> {
     if let Some(parent) = tiff_path.parent() {
         std::fs::create_dir_all(parent)
-            .with_context(|| format!("creation du dossier de sortie {}", parent.display()))?;
+            .with_context(|| format!("creating output dir {}", parent.display()))?;
     }
 
     write_rgb16_tiff(tiff_path, rgb16, width, height)?;
+    write_report(tiff_path, report)?;
 
+    Ok(())
+}
+
+/// Writes the JSON report next to a TIFF (same stem, `.json` extension).
+/// Used for both the final image and the raw stack: each is a real deliverable
+/// and should be traceable on its own.
+pub fn write_report(tiff_path: &Path, report: &StackReport) -> Result<()> {
     let report_path = tiff_path.with_extension("json");
     let data = serde_json::to_string_pretty(report)?;
     std::fs::write(&report_path, data)
-        .with_context(|| format!("ecriture du rapport {}", report_path.display()))?;
-
+        .with_context(|| format!("writing report {}", report_path.display()))?;
     Ok(())
 }

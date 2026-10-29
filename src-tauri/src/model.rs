@@ -214,10 +214,10 @@ pub struct StackReport {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SkippedFrame {
-    /// Nom du fichier source (pas le chemin complet : plus court a afficher).
+    /// Source file name (not the full path: shorter to display).
     pub name: String,
-    /// Pourquoi la frame a ete ecartee.
-    pub reason: String,
+    /// Why the frame was skipped, as a stable code.
+    pub reason: SkipReason,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
@@ -230,11 +230,16 @@ pub struct CropRect {
 }
 
 /// Evenements de progression envoyes a l'UI.
+///
+/// Les messages ne portent **pas de texte** : ils portent un `Stage` (code
+/// stable) et, si besoin, des parametres. C'est le frontend qui traduit, ce qui
+/// permet de changer de langue sans recompiler et sans dupliquer les chaines
+/// cote Rust.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", tag = "kind")]
 pub enum Progress {
-    /// Phase courante + message lisible.
-    Phase { phase: Phase, message: String },
+    /// Current phase, identified by a stable stage code.
+    Phase { phase: Phase, stage: Stage },
     /// Import : n frames dematriçees sur total.
     Import { done: usize, total: usize },
     /// Analyse : n frames scorees sur total.
@@ -242,9 +247,50 @@ pub enum Progress {
     /// Stacking : n frames empilees sur total.
     Stack { done: usize, total: usize },
     /// Une frame a ete ecartee (illisible, corrompue...). Non fatal.
-    Warning { name: String, reason: String },
+    /// `reason` est un code, pas une phrase.
+    Warning { name: String, reason: SkipReason },
     /// Termine avec le rapport final.
     Finished { report: Box<StackReport> },
-    /// Erreur fatale.
-    Error { message: String },
+    /// Erreur fatale, identifiee par un code.
+    Error { error: JobError },
+}
+
+/// Stable, translatable stage codes emitted by the pipeline. The frontend maps
+/// each to a localized sentence; `count` carries the only variable part.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub enum Stage {
+    ScanningFiles,
+    DetectingObject,
+    ScoringFrames,
+    Aligning,
+    /// Stacking `count` frames (block size detail is in the message params).
+    Stacking,
+    Enhancing,
+    WritingOutput,
+}
+
+/// Why a single frame was skipped. A code, not a sentence.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", tag = "kind", content = "detail")]
+pub enum SkipReason {
+    /// Could not be decoded or read.
+    Unreadable,
+    /// Its cached TIFF no longer exists or is empty.
+    MissingCache,
+    /// Not enough usable frames to stack.
+    NotEnoughFrames { found: usize, total: usize },
+}
+
+/// A fatal pipeline error, identified by a code so the UI can localize it.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", tag = "kind", content = "detail")]
+pub enum JobError {
+    NoRawFiles,
+    NoUsableFrames,
+    NotEnoughFrames { found: usize, total: usize },
+    ObjectNotDetected,
+    Cancelled,
+    /// Anything else, with the raw technical message for diagnostics.
+    Other { message: String },
 }

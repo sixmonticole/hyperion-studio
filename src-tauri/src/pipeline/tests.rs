@@ -416,3 +416,53 @@ fn tiff_tronque_est_illisible() {
 
     std::fs::remove_dir_all(&dir).ok();
 }
+
+// --- Enhance: highlight protection (the "Tycho crushed to white" regression) --
+
+/// A bright region close to the white point must stay detailed: two distinct
+/// input levels must remain distinct after enhancement. A hard clamp would
+/// flatten them into the same value, which is exactly what used to happen.
+#[test]
+fn enhancement_preserves_highlight_detail() {
+    use crate::model::EnhanceSettings;
+
+    let (w, h) = (64, 64);
+    // A gradient near the top of the range: the two brightest rows differ.
+    let mut img = vec![0u16; w * h * 3];
+    for y in 0..h {
+        for x in 0..w {
+            // Values from ~0.30 to ~0.99 of full scale.
+            let v = (0.30 + 0.69 * (y as f32 / h as f32) * 65535.0) as u16;
+            let idx = (y * w + x) * 3;
+            img[idx] = v;
+            img[idx + 1] = v;
+            img[idx + 2] = v;
+        }
+    }
+
+    let s = EnhanceSettings {
+        enabled: true,
+        wavelet_amount: 0.0,
+        wavelet_levels: 1,
+        black_point: 0.0,
+        white_point: 0.0,
+        gamma: 1.0,
+        clahe_amount: 0.0,
+        clahe_tiles: 8,
+        clarity: 0.0,
+    };
+    let out = crate::pipeline::enhance::enhance(&img, w, h, &s);
+
+    // Sample two input levels near the top and check they stay ordered and
+    // distinct. If the stretch saturated, they would collapse to the same u16.
+    let idx_a = ((h - 2) * w) * 3;
+    let idx_b = ((h - 3) * w) * 3;
+    let a = out[idx_a] as i32;
+    let b = out[idx_b] as i32;
+    assert!(a > b, "higher input must stay higher: a={a} b={b}");
+    assert!(
+        a - b >= 2,
+        "highlight detail must survive the stretch: a={a} b={b}"
+    );
+    assert!(a < 65535, "the brightest value must not saturate");
+}
