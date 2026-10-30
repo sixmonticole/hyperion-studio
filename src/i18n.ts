@@ -340,7 +340,7 @@ const fr: Dict = {
   "err.sourceMissing": "Le stack source est introuvable.",
   "err.jobRunning": "Un traitement est déjà en cours.",
   "err.notEnoughMemory":
-    "Mémoire insuffisante : environ {need} requis, {free} disponible. Réduisez le nombre de frames, la taille du crop, ou augmentez la taille des blocs.",
+    "Mémoire insuffisante : environ {need} requis, {free} disponible. Réduisez la taille du crop, fermez des applications, ou traitez moins de frames à la fois.",
 };
 
 const en: Dict = {
@@ -503,7 +503,7 @@ const en: Dict = {
   "err.sourceMissing": "The source stack could not be found.",
   "err.jobRunning": "A job is already running.",
   "err.notEnoughMemory":
-    "Not enough memory: about {need} needed, {free} available. Reduce the frame count or the crop size, or increase the block size.",
+    "Not enough memory: about {need} needed, {free} available. Reduce the crop size, close other applications, or process fewer frames at once.",
 };
 
 const DICTS: Record<Lang, Dict> = { fr, en };

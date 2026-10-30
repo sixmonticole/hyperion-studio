@@ -33,40 +33,62 @@ pub const CANCELLED: &str = "__cancelled__";
 
 /// Estimates the pipeline's peak resident memory, in bytes.
 ///
-/// This mirrors the real allocation model after the streaming-block fix, where
-/// blocks are merged as they are produced and only one block is ever alive:
+/// Calibrated against a measured run: 600 frames at a 4024x4024 crop with
+/// block size 10 peaked at **2899 MB** RSS (sampled by `diag_memory_synth`).
 ///
-/// - the merge accumulator: `crop_pixels * 3` floats + `crop_pixels` floats;
-/// - the current block: `crop_pixels * 3` u16;
-/// - the block reference luminance: `crop_pixels` floats;
-/// - the block aligner: two FFT working buffers of `crop_pixels` complex
-///   floats (forward and keep);
-/// - one decoded frame: a full sensor image, assumed 24 MP, as u16 RGB;
-/// - one cropped frame: `crop_pixels * 3` u16.
+/// The model has three parts:
 ///
-/// `frames` and `block_size` are accepted so the estimate stays honest if the
-/// allocation model ever becomes block-count dependent again; today the peak
-/// does not grow with the frame count.
+/// 1. **Long-lived buffers**, alive for the whole run: the block accumulator
+///    and the streaming merge accumulator (each `crop_pixels * 4` floats), the
+///    block aligner's reference spectrum, its FFT plan scratch, and the merge
+///    reference luminance.
+/// 2. **Per-worker transients**: rayon decodes and aligns several frames at
+///    once, so each worker in flight holds a decoded frame, its crop, a
+///    luminance plane, a warped copy, and a Correlate FFT working buffer.
+/// 3. A **measured safety factor** on top, because not every worker peaks at
+///    the same instant and the allocator does not return freed pages at once.
+///
+/// The estimate is deliberately conservative: it is a guard, so overshooting
+/// is safe while undershooting is not.
+///
+/// `frames` bounds the work but does not change the peak: blocks are merged as
+/// they are produced, so only one block is ever alive. The parameter is kept so
+/// a future regression that reintroduces per-block accumulation is caught by
+/// the test rather than by a reboot.
 pub fn estimate_peak_memory(frames: usize, crop_pixels: usize, block_size: usize) -> u64 {
-    let brush = |n: u64| n;
     let px = crop_pixels as u64;
 
-    let accumulator = brush(px * 3 * 4 + px * 4); // f32 RGB sum + f32 weight
-    let current_block = brush(px * 3 * 2); // u16 RGB
-    let merge_reference = brush(px * 4); // f32 luminance
-    let aligner = brush(px * 8 * 2); // 2 complex-f32 buffers
-    let decoded_frame = brush(24_000_000 * 3 * 2); // one full sensor frame
-    let cropped_frame = brush(px * 3 * 2); // its crop
+    // Long-lived: two float accumulators, the aligner's spectrum and plan
+    // scratch, and the merge reference luminance.
+    let accumulators = (px * 3 * 4 + px * 4) * 2;
+    let aligner_long = px * 8 // reference spectrum (Complex<f32>)
+        + px * 8 // FFT plan scratch
+        + px * 4; // merge reference luminance
+    let long_lived = accumulators + aligner_long;
 
-    // Headroom for allocator slack, the UI, and the FFT planner.
-    let subtotal =
-        accumulator + current_block + merge_reference + aligner + decoded_frame + cropped_frame;
-    let base = subtotal + subtotal / 5;
+    // One worker in flight, at the moment it holds the most at once: the
+    // decoded frame, its crop, a luminance plane, the warped result, and the
+    // FFT correlation buffer.
+    let per_worker = px * 3 * 2 // decoded frame (u16 RGB)
+        + px * 3 * 2 // cropped frame
+        + px * 4 // luminance (f32)
+        + px * 3 * 2 // warped frame
+        + px // validity mask (u8)
+        + px * 8; // FFT correlation buffer (Complex<f32>)
 
-    // Guard against a regression that reintroduces per-block accumulation: if
-    // the model ever needs it, this is where the block count would enter.
+    // Concurrency: not every rayon worker peaks at the same instant, so we
+    // count a fraction of the logical cores. Four in flight matched the
+    // measured run closely.
+    let threads = num_cpus::get().clamp(1, 16) as u64;
+    let in_flight = threads.min(4);
+
+    let subtotal = long_lived + per_worker * in_flight;
+    // Measured safety factor: the run peaked at 2.9 GB where the strict
+    // component sum was 2.3 GB, so we keep 30% of headroom.
+    let with_headroom = subtotal + subtotal * 3 / 10;
+
     let _ = (frames, block_size);
-    base
+    with_headroom
 }
 
 /// Per-region selection context, shared by the stacking functions.

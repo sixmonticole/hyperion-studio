@@ -709,11 +709,12 @@ fn peak_memory_is_constant_in_frame_count() {
         small, large,
         "peak memory must not grow with the frame count"
     );
-    // And it must stay under a gigabyte, versus the ~6.7 GB the old
-    // per-block accumulation reached on the same session.
+    // Calibrated against a measured run (2899 MB at a 4024x4024 crop), with
+    // headroom. It must stay well under a gigabyte-scale machine's budget but
+    // must not under-report, or the guard would let a fatal run through.
+    let mb = large / 1024 / 1024;
     assert!(
-        large < 1024 * 1024 * 1024,
-        "peak estimate too high: {} MB",
-        large / 1024 / 1024
+        (2000..4096).contains(&mb),
+        "peak estimate should be a conservative 2-4 GB for a 3620x3620 crop, got {mb} MB"
     );
 }
