@@ -846,6 +846,8 @@ fn stack_blockwise(
     // first block, because that block is added unwarped and is therefore the
     // reference the others are brought onto.
     let mut merge_ref: Option<Vec<f32>> = None;
+    // Accumulated shift that brings the current block onto the first one.
+    let mut cum: align::Shift = (0.0, 0.0);
 
     for chunk in order.chunks(block_size) {
         check_cancel(cancel)?;
@@ -882,12 +884,21 @@ fn stack_blockwise(
             None,
         )?;
 
-        // Bring it onto the running reference and merge, then let it go.
+        // Bring it onto the origin reference, then merge and let it go.
         //
-        // The shift is computed in a scope so the borrow of `merge_ref` ends
-        // before `block` is moved into the accumulator.
+        // Blocks are aligned **in a chain**: each one is matched against the
+        // *previous* block, and the per-step shifts are accumulated. Matching
+        // every block directly against the first failed on this session: the
+        // Moon travels ~1800 px vertically over 993 frames, so by the last
+        // block the two images barely overlap and phase correlation picks a
+        // wrong peak (visible as ghosting). Chaining keeps each step small and
+        // reliable, which is what makes the accumulation meaningful.
+        //
+        // `cum` is the shift that brings the current block onto block 1. A
+        // block found at +100 px relative to the previous one, itself at
+        // +50 px, is at +150 px and must be warped by -150 px.
         let is_first = merge_ref.is_none();
-        let merge_shift: Option<align::Shift> = if is_first || !settings.align {
+        let step_shift: Option<align::Shift> = if is_first || !settings.align {
             None
         } else {
             let rl = merge_ref.as_ref().expect("reference set above");
@@ -898,9 +909,24 @@ fn stack_blockwise(
 
         if is_first {
             merge_ref = Some(align::luminance(&block, pixels));
+            cum = (0.0, 0.0);
+        } else if let Some(s) = step_shift {
+            // The reference luminance must follow the chain too, otherwise the
+            // next step compares against a frame that is two blocks back.
+            //
+            // Clamp the step: a single bad correlation would otherwise walk the
+            // accumulated shift off the frame and empty the stack. A block step
+            // beyond a quarter of the crop is not physical drift.
+            let limit = (crop_w.min(crop_h) as f64) * 0.25;
+            let (sx, sy) = (s.0.clamp(-limit, limit), s.1.clamp(-limit, limit));
+            cum.0 += sx;
+            cum.1 += sy;
+            merge_ref = Some(align::luminance(&block, pixels));
         }
 
-        let (aligned, mask) = match merge_shift {
+        // Warp by the accumulated shift to land on the origin reference.
+        let total_shift = if is_first { None } else { Some(cum) };
+        let (aligned, mask) = match total_shift {
             Some(shift) => align::shift_rgb16_masked(&block, crop_w, crop_h, shift),
             None => (block, vec![1u8; pixels]),
         };

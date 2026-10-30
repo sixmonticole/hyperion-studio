@@ -163,7 +163,7 @@ export const DEFAULT_SETTINGS: Settings = {
   apEnabled: false,
   derotate: false,
   blockSize: 10,
-  tileSelect: true,
+  tileSelect: false,
   tileSize: 64,
   sampleEnabled: true,
   sampleThreshold: 100,

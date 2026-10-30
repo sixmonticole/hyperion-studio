@@ -69,18 +69,33 @@ const DEMO_PREVIEW = `data:image/svg+xml;utf8,${encodeURIComponent(`
 
 const SETTINGS_KEY = "hyperion:settings";
 
+/// One-time migration marker: per-region selection was shipped on by default
+/// and visibly wrecked a real stack, so a stored `true` must not survive.
+const SETTINGS_MIGRATION_KEY = "hyperion:settings.migrated.tileSelect";
+
 /// Loads persisted settings, merged over the defaults so a partial or older
 /// saved object can never break the app.
 function loadSettings(): Settings {
   try {
     const raw = window.localStorage.getItem(SETTINGS_KEY);
     if (!raw) return DEFAULT_SETTINGS;
-    return mergeSettings(JSON.parse(raw) as Partial<Settings>);
+    const merged = mergeSettings(JSON.parse(raw) as Partial<Settings>);
+
+    // Migrate away from the broken default, once.
+    try {
+      if (!window.localStorage.getItem(SETTINGS_MIGRATION_KEY)) {
+        merged.tileSelect = false;
+        window.localStorage.setItem(SETTINGS_MIGRATION_KEY, "1");
+      }
+    } catch {
+      // Storage unavailable: the in-memory default already has it off.
+    }
+
+    return merged;
   } catch {
     return DEFAULT_SETTINGS;
   }
 }
-
 function App() {
   // --- Folder & scan state ---
   const [sourceDir, setSourceDir] = useState("");

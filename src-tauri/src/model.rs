@@ -182,7 +182,14 @@ pub struct Settings {
     /// courts, puis moyenner les blocs, preserve la nettete.
     pub block_size: usize,
     /// Selection de frames **par zone** : chaque region de l'image est tiree
-    /// des frames qui y sont nettes, au lieu du seul tri global. Defaut true.
+    /// des frames qui y sont nettes, au lieu du seul tri global.
+    ///
+    /// **Desactive par defaut.** Sur une session reelle (993 poses A6000), les
+    /// scores par tuile ne varient que de ~1,6 % d'une frame a l'autre : le
+    /// score de nettete y mesure surtout le bruit du capteur, pas la nettete.
+    /// Chaque tuile tire alors des frames differentes au hasard, et le stack
+    /// final montre une mosaique de carres et des raccords visibles. A activer
+    /// seulement quand le score saura distinguer le grain du detail.
     pub tile_select: bool,
     /// Taille d'une tuile de selection (cote, en pixels). Defaut 64.
     pub tile_size: usize,
@@ -216,7 +223,7 @@ impl Default for Settings {
             ap_enabled: false,
             derotate: false,
             block_size: 10,
-            tile_select: true,
+            tile_select: false,
             tile_size: 64,
             sample_enabled: true,
             sample_threshold: 100,

@@ -147,6 +147,16 @@ name = "diag_memory_info"
 path = "src/bin/diag_memory_info.rs"
 required-features = ["devtools"]
 
+[[bin]]
+name = "diag_stack"
+path = "src/bin/diag_stack.rs"
+required-features = ["devtools"]
+
+[[bin]]
+name = "diag_detect"
+path = "src/bin/diag_detect.rs"
+required-features = ["devtools"]
+
 [features]
 devtools = []
 

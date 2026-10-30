@@ -1,0 +1,25 @@
+Turn per-region selection back off by default, and chain block alignment
+
+Per-region selection wrecked a real stack. On the 993-frame session it was
+shipped on by default, and the result was a mosaic of squares with visible
+seams and a ghosted Moon.
+
+Cause: the feature ranks frames per tile using the sharpness score, and on this
+session that score varies by only ~1.6% between frames. It is measuring sensor
+noise, not sharpness (a point established earlier and then not applied when the
+feature was made default). Each tile therefore draws a different random subset
+of frames, and the seams show.
+
+Fix: `tile_select` defaults to off. A one-time migration clears a stored `true`,
+so anyone who ran the broken default is not left with it. The feature stays
+available for when the score can tell grain from detail.
+
+Also fixes a real fragility in block merging while I was in there: every block
+was aligned directly against the first one. On this session the Moon travels
+~1800 px vertically, so by the last blocks the two images barely overlap and
+phase correlation picks a wrong peak. Blocks are now aligned in a chain
+(block to previous block, shifts accumulated and clamped), which keeps each
+step small and reliable.
+
+Verified: same cache, same settings, `tile_select=false` gives a clean, sharp
+Moon; `tile_select=true` gives the mosaic.
