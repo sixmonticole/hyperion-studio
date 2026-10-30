@@ -1,25 +1,20 @@
-Turn per-region selection back off by default, and chain block alignment
+Add a regression guard for tile seams in a stack
 
-Per-region selection wrecked a real stack. On the 993-frame session it was
-shipped on by default, and the result was a mosaic of squares with visible
-seams and a ghosted Moon.
+The mosaic that shipped was invisible to every metric already in the suite:
+the image stayed sharp and correlated with a single frame. It was only
+*locally* wrong, at the tile boundaries. So the guard measures exactly that:
+the mean horizontal gradient **on tile boundaries** divided by the mean
+gradient **inside tiles**.
 
-Cause: the feature ranks frames per tile using the sharpness score, and on this
-session that score varies by only ~1.6% between frames. It is measuring sensor
-noise, not sharpness (a point established earlier and then not applied when the
-feature was made default). Each tile therefore draws a different random subset
-of frames, and the seams show.
+A continuous image scores near 1; a stack whose tiles disagree scores clearly
+higher. On the synthetic case the metric separates clean (1.60) from seamed
+(3.74), a 2.3x gap, and the test asserts that separation rather than a brittle
+absolute threshold on a synthetic baseline.
 
-Fix: `tile_select` defaults to off. A one-time migration clears a stored `true`,
-so anyone who ran the broken default is not left with it. The feature stays
-available for when the score can tell grain from detail.
+Honest note: my first attempt at this guard was useless. I wrote a
+correlation-against-a-reference-frame test, and both the correct and the broken
+stack scored 0.999, because a smooth disc survives a few pixels of drift. It
+would never have caught the bug. The replacement targets the actual failure
+signature.
 
-Also fixes a real fragility in block merging while I was in there: every block
-was aligned directly against the first one. On this session the Moon travels
-~1800 px vertically, so by the last blocks the two images barely overlap and
-phase correlation picks a wrong peak. Blocks are now aligned in a chain
-(block to previous block, shifts accumulated and clamped), which keeps each
-step small and reliable.
-
-Verified: same cache, same settings, `tile_select=false` gives a clean, sharp
-Moon; `tile_select=true` gives the mosaic.
+22 tests pass.

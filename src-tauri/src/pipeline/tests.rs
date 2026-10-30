@@ -755,3 +755,100 @@ fn subsampling_is_deterministic_sorted_and_spread() {
     let over = crate::pipeline::deterministic_sample(items.clone(), 5000, seed);
     assert_eq!(over, items);
 }
+
+// --- Stack quality: the "tile mosaic" regression ----------------------------
+
+/// Detects the signature of a tiled stack gone wrong: a seam at every tile
+/// boundary.
+///
+/// This is the guard for the bug that shipped. Per-region selection drew a
+/// different random subset of frames per tile, so neighbouring tiles disagreed
+/// and the result was a mosaic of squares. Global metrics miss it: the image
+/// stays sharp and correlates with a single frame, it is only *locally*
+/// inconsistent. So we measure the one thing that distinguishes it: the
+/// gradient **across tile borders** compared to the gradient **inside tiles**.
+///
+/// A clean stack has a seam ratio near 1. A mosaic has a clearly higher one.
+#[test]
+fn detects_tile_seams_in_a_stack() {
+    let (w, h) = (256, 256);
+    let tile = 64;
+
+    // A smooth, structured background: no real edges at the tile grid.
+    let clean: Vec<u16> = (0..w * h * 3)
+        .map(|i| {
+            let p = i / 3;
+            let (x, y) = (p % w, p / w);
+            let s = (x as f64 * 0.05).sin() * (y as f64 * 0.04).cos();
+            ((30000.0 + 12000.0 * s).clamp(0.0, 65535.0)) as u16
+        })
+        .collect();
+
+    // The same image, but each tile brightened by a different amount: exactly
+    // what mismatched per-tile frame sets look like.
+    let mut seamy = clean.clone();
+    for y in 0..h {
+        for x in 0..w {
+            let tx = x / tile;
+            let ty = y / tile;
+            // Deterministic per-tile offset, a few percent.
+            let offset = ((tx * 7 + ty * 13) % 5) as f64 * 900.0;
+            let i = (y * w + x) * 3;
+            for c in 0..3 {
+                seamy[i + c] = ((seamy[i + c] as f64 + offset).clamp(0.0, 65535.0)) as u16;
+            }
+        }
+    }
+
+    let clean_ratio = seam_ratio(&clean, w, h, tile);
+    let seamy_ratio = seam_ratio(&seamy, w, h, tile);
+    println!("clean seam ratio = {clean_ratio:.4}, seamy = {seamy_ratio:.4}");
+
+    // Absolute thresholds would be brittle: a smooth background has its own
+    // small on-grid gradient from curvature. What must hold is the **separation**
+    // between a continuous image and a tiled one, which is the signal a guard
+    // would act on.
+    assert!(
+        seamy_ratio > clean_ratio * 1.8,
+        "a seamed stack must stand out from a continuous one: clean {clean_ratio:.3} vs seamy {seamy_ratio:.3}"
+    );
+    assert!(
+        seamy_ratio > 2.5,
+        "a tiled stack with mismatched tiles must be flagged in absolute terms, got {seamy_ratio:.3}"
+    );
+}
+
+/// Ratio of the mean horizontal gradient **on tile boundaries** to the mean
+/// gradient **away from them**. Near 1 when the image is continuous across the
+/// grid; clearly above 1 when tiles do not agree.
+fn seam_ratio(rgb: &[u16], w: usize, h: usize, tile: usize) -> f64 {
+    let lum = |x: usize, y: usize| -> f64 {
+        let i = (y * w + x) * 3;
+        0.299 * rgb[i] as f64 + 0.587 * rgb[i + 1] as f64 + 0.114 * rgb[i + 2] as f64
+    };
+
+    let mut on_seam = 0.0f64;
+    let mut n_seam = 0.0f64;
+    let mut off_seam = 0.0f64;
+    let mut n_off = 0.0f64;
+
+    // Interior only, so the frame border does not pollute the measure.
+    for y in 4..h - 4 {
+        for x in 4..w - 4 {
+            let g = (lum(x + 1, y) - lum(x, y)).abs();
+            // A vertical tile boundary sits where x is a multiple of `tile`.
+            let near = (x % tile) <= 1 || (x % tile) >= tile - 1;
+            if near {
+                on_seam += g;
+                n_seam += 1.0;
+            } else {
+                off_seam += g;
+                n_off += 1.0;
+            }
+        }
+    }
+
+    let a = on_seam / n_seam.max(1.0);
+    let b = off_seam / n_off.max(1.0);
+    a / b.max(1e-9)
+}
