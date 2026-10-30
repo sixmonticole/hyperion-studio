@@ -122,6 +122,16 @@ name = "diag_ap_real"
 path = "src/bin/diag_ap_real.rs"
 required-features = ["devtools"]
 
+[[bin]]
+name = "diag_memory"
+path = "src/bin/diag_memory.rs"
+required-features = ["devtools"]
+
+[[bin]]
+name = "diag_memory_synth"
+path = "src/bin/diag_memory_synth.rs"
+required-features = ["devtools"]
+
 [features]
 devtools = []
 

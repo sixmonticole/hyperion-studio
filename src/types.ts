@@ -75,6 +75,14 @@ export interface CacheInfo {
   stale: number;
 }
 
+/// Physical memory state, used by the pre-run guard.
+export interface MemoryInfo {
+  /// Total physical memory, in bytes (null if unavailable).
+  total: number | null;
+  /// Memory currently available for new allocations, in bytes.
+  available: number | null;
+}
+
 export interface CropRect {
   x: number;
   y: number;

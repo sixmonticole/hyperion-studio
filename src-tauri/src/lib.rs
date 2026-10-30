@@ -230,6 +230,29 @@ fn available_space(path: String) -> Option<u64> {
     pipeline::cache::available_space(std::path::Path::new(&path))
 }
 
+/// Total physical memory (bytes) and currently available memory (bytes).
+///
+/// Used by the memory guard: the UI refuses to start a run whose estimated peak
+/// footprint exceeds what is available. A run that overcommits memory pushes
+/// macOS into swap, which starves the kernel watchdog and can reboot the
+/// machine (observed on a 900-frame session).
+#[tauri::command]
+fn memory_info() -> serde_json::Value {
+    let total = pipeline::cache::total_memory();
+    let available = pipeline::cache::available_memory();
+    serde_json::json!({ "total": total, "available": available })
+}
+
+/// Estimates the peak resident memory (bytes) of a run, before it starts.
+///
+/// `frames` is the number of frames to stack, `crop_pixels` the crop area, and
+/// `block_size` the blockwise stacking size. This mirrors the pipeline's real
+/// allocation model so the UI can warn or refuse early rather than crash.
+#[tauri::command]
+fn estimate_memory(frames: usize, crop_pixels: usize, block_size: usize) -> u64 {
+    pipeline::estimate_peak_memory(frames, crop_pixels, block_size)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -246,7 +269,9 @@ pub fn run() {
             clear_cache,
             cache_info,
             prune_cache,
-            available_space
+            available_space,
+            memory_info,
+            estimate_memory
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

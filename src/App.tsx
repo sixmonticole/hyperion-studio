@@ -7,6 +7,7 @@ import {
   DEFAULT_SETTINGS,
   mergeSettings,
   type CacheInfo,
+  type MemoryInfo,
   type Phase,
   type Progress,
   type ScanResult,
@@ -367,6 +368,39 @@ function App() {
     setDetail("");
     setDone(0);
     setTotal(scan?.count ?? 0);
+
+    // --- Memory guard -------------------------------------------------------
+    // A run whose peak footprint exceeds available memory pushes macOS into
+    // swap, which starves the kernel watchdog and can reboot the machine. This
+    // was observed on a 900-frame session. Estimate first, then refuse rather
+    // than risk a reboot.
+    if (IN_TAURI) {
+      try {
+        const mem = await invoke<MemoryInfo>("memory_info");
+        // Crop side: from the detected object radius (with the pipeline's 8%
+        // margin), else a conservative fraction of the sensor.
+        const radius = scan?.preview?.planetRadius ?? 0;
+        const cropSide = radius > 0 ? Math.round(radius * 1.16) * 2 : 3000;
+        const cropPixels = cropSide * cropSide;
+        const need = await invoke<number>("estimate_memory", {
+          frames: scan?.count ?? 0,
+          cropPixels,
+          blockSize: settings.blockSize,
+        });
+        if (mem.available != null && need > mem.available) {
+          setError(
+            t("err.notEnoughMemory", {
+              need: formatBytes(need, lang),
+              free: formatBytes(mem.available, lang),
+            }),
+          );
+          return;
+        }
+      } catch {
+        // Guard is best-effort: a failure to measure must not block the run.
+      }
+    }
+
     setDrawerOpen(false);
     setCancelling(false);
     setPhase("importing");

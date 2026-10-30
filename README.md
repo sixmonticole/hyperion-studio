@@ -179,6 +179,20 @@ In the source folder's `hyperion_out/`:
 - A demosaiced A6000 RAW is **~145 MB**; a 200-frame cache is ~29 GB, a
   428-frame cache ~62 GB. Safe to delete (rebuilt on demand).
 
+### Memory
+
+Peak resident memory is **flat in the frame count**: blocks are merged as they
+are produced, so only one block is ever alive (about 0.9 GB for a 3600x3600
+crop, dominated by the f32 accumulator and the FFT buffers).
+
+The earlier implementation kept every block in a `Vec` and merged at the end,
+so memory grew with the block count. On a 900-frame session at a 3600x3600 crop
+that reached ~6.7 GB on an 8 GB machine, pushed macOS into swap, and the swap
+storm starved `watchdogd` until the kernel panicked and rebooted (confirmed in
+the system panic log: `watchdog timeout: no checkins from watchdogd in 90
+seconds`). The UI now estimates the peak before a run and refuses to start when
+it exceeds the memory available.
+
 ## Development tools
 
 Built with `--features devtools`:
@@ -193,7 +207,15 @@ cargo run --features devtools --release --bin crop_preview    -- <in.tif> <out.p
 cargo run --features devtools --release --bin compare_sharp   -- <A.tif> <B.tif>
 cargo run --features devtools --release --bin profile_session -- <cache_folder> [n]
 cargo run --features devtools --release --bin diag_chain      -- <cache_folder> [n]
+cargo run --features devtools --release --bin diag_ap         -- [cache.tif]
+cargo run --features devtools --release --bin diag_ap_real    -- <ref.tif> <frame.tif>
+cargo run --features devtools --release --bin diag_memory_synth -- [--frames N] [--size S] [--block B]
 ```
+
+`diag_ap` and `diag_ap_real` report the local alignment points' shift estimates
+and warp quality. `diag_memory_synth` generates synthetic frames and runs the
+real pipeline while sampling peak RSS: it is how the streaming-block memory fix
+is measured.
 
 `pipeline_steps` writes one image per pipeline stage (raw frame, simple mean,
 aligned frame, raw stack, levels, wavelets, final): it is the tool to **visually

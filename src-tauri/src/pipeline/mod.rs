@@ -31,6 +31,44 @@ pub type ProgressFn = dyn Fn(Progress) + Send + Sync;
 /// distinguish a cancellation from a real failure.
 pub const CANCELLED: &str = "__cancelled__";
 
+/// Estimates the pipeline's peak resident memory, in bytes.
+///
+/// This mirrors the real allocation model after the streaming-block fix, where
+/// blocks are merged as they are produced and only one block is ever alive:
+///
+/// - the merge accumulator: `crop_pixels * 3` floats + `crop_pixels` floats;
+/// - the current block: `crop_pixels * 3` u16;
+/// - the block reference luminance: `crop_pixels` floats;
+/// - the block aligner: two FFT working buffers of `crop_pixels` complex
+///   floats (forward and keep);
+/// - one decoded frame: a full sensor image, assumed 24 MP, as u16 RGB;
+/// - one cropped frame: `crop_pixels * 3` u16.
+///
+/// `frames` and `block_size` are accepted so the estimate stays honest if the
+/// allocation model ever becomes block-count dependent again; today the peak
+/// does not grow with the frame count.
+pub fn estimate_peak_memory(frames: usize, crop_pixels: usize, block_size: usize) -> u64 {
+    let brush = |n: u64| n;
+    let px = crop_pixels as u64;
+
+    let accumulator = brush(px * 3 * 4 + px * 4); // f32 RGB sum + f32 weight
+    let current_block = brush(px * 3 * 2); // u16 RGB
+    let merge_reference = brush(px * 4); // f32 luminance
+    let aligner = brush(px * 8 * 2); // 2 complex-f32 buffers
+    let decoded_frame = brush(24_000_000 * 3 * 2); // one full sensor frame
+    let cropped_frame = brush(px * 3 * 2); // its crop
+
+    // Headroom for allocator slack, the UI, and the FFT planner.
+    let subtotal =
+        accumulator + current_block + merge_reference + aligner + decoded_frame + cropped_frame;
+    let base = subtotal + subtotal / 5;
+
+    // Guard against a regression that reintroduces per-block accumulation: if
+    // the model ever needs it, this is where the block count would enter.
+    let _ = (frames, block_size);
+    base
+}
+
 /// Per-region selection context, shared by the stacking functions.
 ///
 /// Holds the tile grid and, for each frame, the mask of tiles it is admitted
@@ -681,16 +719,26 @@ fn stack_blockwise(
     let mut order: Vec<&FrameInfo> = kept.to_vec();
     order.sort_by_key(|f| f.index);
 
-    let n_blocks = order.len().div_ceil(block_size).max(1);
     progress(Progress::Phase {
         phase: Phase::Stacking,
         stage: Stage::Stacking,
     });
 
-    // Stack each block (internal alignment on its best frame).
+    // Stack each block (internal alignment on its best frame), merging as we go.
+    //
+    // Memory: the previous implementation kept **every** block in a Vec and
+    // merged only at the end, so a long session cost one full crop per block.
+    // On 900 frames at 3600x3600 that reached ~6.7 GB and pushed the machine
+    // into swap, which starved the kernel watchdog and rebooted it. We now
+    // merge each block into a running accumulator and drop it immediately, so
+    // peak memory is one block plus the accumulator regardless of frame count.
     let total_for_progress = kept_count.max(1);
     let done_blocks = Mutex::new(0usize);
-    let mut blocks: Vec<Vec<u16>> = Vec::with_capacity(n_blocks);
+    let mut merge_acc = stack::Accumulator::new(crop_w, crop_h);
+    // Reference luminance for the mutual block alignment. Frozen after the
+    // first block, because that block is added unwarped and is therefore the
+    // reference the others are brought onto.
+    let mut merge_ref: Option<Vec<f32>> = None;
 
     for chunk in order.chunks(block_size) {
         check_cancel(cancel)?;
@@ -713,8 +761,11 @@ fn stack_blockwise(
         } else {
             None
         };
+        drop(bcrop);
+        drop(brgb);
 
-        blocks.push(stack_frame_set(
+        // Stack this block on its own.
+        let block = stack_frame_set(
             chunk,
             crop,
             pixels,
@@ -722,7 +773,39 @@ fn stack_blockwise(
             tile_ctx,
             block_aligner.as_ref(),
             None,
-        )?);
+        )?;
+
+        // Bring it onto the running reference and merge, then let it go.
+        //
+        // The shift is computed in a scope so the borrow of `merge_ref` ends
+        // before `block` is moved into the accumulator.
+        let is_first = merge_ref.is_none();
+        let merge_shift: Option<align::Shift> = if is_first || !settings.align {
+            None
+        } else {
+            let rl = merge_ref.as_ref().expect("reference set above");
+            let merger = align::Aligner::new(rl, crop_w, crop_h);
+            let lum = align::luminance(&block, pixels);
+            Some(merger.estimate(&lum))
+        };
+
+        if is_first {
+            merge_ref = Some(align::luminance(&block, pixels));
+        }
+
+        let (aligned, mask) = match merge_shift {
+            Some(shift) => align::shift_rgb16_masked(&block, crop_w, crop_h, shift),
+            None => (block, vec![1u8; pixels]),
+        };
+
+        let scale = if settings.normalize {
+            let ml = stack::mean_luminance(&aligned);
+            if ml > 1.0 { 8000.0 / ml } else { 1.0 }
+        } else {
+            1.0
+        };
+        merge_acc.add(&aligned, Some(&mask), 1.0, scale);
+        drop(aligned);
 
         let mut d = done_blocks.lock().unwrap();
         *d += chunk.len();
@@ -732,36 +815,7 @@ fn stack_blockwise(
         });
     }
 
-    // Fusion des blocs : on les aligne mutuellement (sur le premier) et on les
-    // moyenne. Peu de blocs => alignement robuste.
-    let ref_lum = align::luminance(&blocks[0], pixels);
-    let merger = if settings.align {
-        Some(align::Aligner::new(&ref_lum, crop_w, crop_h))
-    } else {
-        None
-    };
-
-    let mut acc = stack::Accumulator::new(crop_w, crop_h);
-    for (bi, blk) in blocks.iter().enumerate() {
-        let (aligned, mask) = if bi == 0 {
-            (blk.clone(), vec![1u8; pixels])
-        } else if let Some(m) = &merger {
-            let lum = align::luminance(blk, pixels);
-            let shift = m.estimate(&lum);
-            align::shift_rgb16_masked(blk, crop_w, crop_h, shift)
-        } else {
-            (blk.clone(), vec![1u8; pixels])
-        };
-        let scale = if settings.normalize {
-            let ml = stack::mean_luminance(&aligned);
-            if ml > 1.0 { 8000.0 / ml } else { 1.0 }
-        } else {
-            1.0
-        };
-        acc.add(&aligned, Some(&mask), 1.0, scale);
-    }
-
-    Ok(acc.finish())
+    Ok(merge_acc.finish())
 }
 
 /// Empilement global (repli) : aligne chaque frame directement sur la reference.

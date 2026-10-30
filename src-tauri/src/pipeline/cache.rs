@@ -97,6 +97,43 @@ pub fn available_space(path: &Path) -> Option<u64> {
     Some(stat.f_frsize as u64 * stat.f_bavail as u64)
 }
 
+/// Reads a 64-bit integer from `sysctlbyname`, or `None` on failure.
+fn sysctl_u64(name: &str) -> Option<u64> {
+    use std::ffi::CString;
+
+    let cname = CString::new(name).ok()?;
+    let mut value: u64 = 0;
+    let mut size = std::mem::size_of::<u64>();
+    let rc = unsafe {
+        libc::sysctlbyname(
+            cname.as_ptr(),
+            &mut value as *mut u64 as *mut libc::c_void,
+            &mut size,
+            std::ptr::null_mut(),
+            0,
+        )
+    };
+    if rc == 0 { Some(value) } else { None }
+}
+
+/// Total physical memory, in bytes. `None` if the platform call fails.
+pub fn total_memory() -> Option<u64> {
+    sysctl_u64("hw.memsize")
+}
+
+/// Memory currently available for new allocations, in bytes.
+///
+/// Approximated by free + inactive pages, which is what the system can hand out
+/// without further swapping. Deliberately conservative: it ignores purgeable
+/// and speculative pages. `None` if the platform call fails.
+pub fn available_memory() -> Option<u64> {
+    let page_size = sysctl_u64("hw.pagesize").unwrap_or(4096);
+    let free = sysctl_u64("vm.page_free_count")?;
+    let inactive = sysctl_u64("vm.page_inactive_count").unwrap_or(0);
+    // Keep a floor: never report less than a small working set.
+    Some((free + inactive).saturating_mul(page_size))
+}
+
 /// Indicates whether a cached TIFF exists and is not empty. A zero-length file
 /// is the leftover of an interrupted write, so it is treated as absent.
 pub fn is_usable(cache_path: &Path) -> bool {

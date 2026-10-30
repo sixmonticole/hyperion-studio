@@ -177,6 +177,7 @@ type Dict = {
   "err.fileExists": string;
   "err.sourceMissing": string;
   "err.jobRunning": string;
+  "err.notEnoughMemory": string;
 };
 
 const fr: Dict = {
@@ -338,6 +339,8 @@ const fr: Dict = {
   "err.fileExists": "Un fichier porte déjà ce nom. Choisissez un autre nom.",
   "err.sourceMissing": "Le stack source est introuvable.",
   "err.jobRunning": "Un traitement est déjà en cours.",
+  "err.notEnoughMemory":
+    "Mémoire insuffisante : environ {need} requis, {free} disponible. Réduisez le nombre de frames, la taille du crop, ou augmentez la taille des blocs.",
 };
 
 const en: Dict = {
@@ -499,6 +502,8 @@ const en: Dict = {
   "err.fileExists": "A file with this name already exists. Choose another name.",
   "err.sourceMissing": "The source stack could not be found.",
   "err.jobRunning": "A job is already running.",
+  "err.notEnoughMemory":
+    "Not enough memory: about {need} needed, {free} available. Reduce the frame count or the crop size, or increase the block size.",
 };
 
 const DICTS: Record<Lang, Dict> = { fr, en };

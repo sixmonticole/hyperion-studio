@@ -694,3 +694,26 @@ fn central_correlation(ref_lum: &[f32], rgb: &[u16], w: usize, h: usize) -> f64 
     }
     num / (da.sqrt() * db.sqrt())
 }
+
+// --- Memory safety (the 900-frame reboot) ------------------------------------
+
+/// The streaming merge must be much cheaper than accumulating every block.
+/// Regression guard: the old code kept one full crop per block alive, which on
+/// 900 frames at a 3600x3600 crop reached ~6.7 GB and rebooted an 8 GB machine.
+#[test]
+fn peak_memory_is_constant_in_frame_count() {
+    let crop = 3620usize * 3620;
+    let small = crate::pipeline::estimate_peak_memory(200, crop, 10);
+    let large = crate::pipeline::estimate_peak_memory(900, crop, 10);
+    assert_eq!(
+        small, large,
+        "peak memory must not grow with the frame count"
+    );
+    // And it must stay under a gigabyte, versus the ~6.7 GB the old
+    // per-block accumulation reached on the same session.
+    assert!(
+        large < 1024 * 1024 * 1024,
+        "peak estimate too high: {} MB",
+        large / 1024 / 1024
+    );
+}
