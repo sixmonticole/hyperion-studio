@@ -1,20 +1,27 @@
-Add a regression guard for tile seams in a stack
+Replace chained block alignment with an absolute anchor, skip clipped frames
 
-The mosaic that shipped was invisible to every metric already in the suite:
-the image stayed sharp and correlated with a single frame. It was only
-*locally* wrong, at the tile boundaries. So the guard measures exactly that:
-the mean horizontal gradient **on tile boundaries** divided by the mean
-gradient **inside tiles**.
+Two fixes for the stack that came out with the Moon cut by a straight edge.
 
-A continuous image scores near 1; a stack whose tiles disagree scores clearly
-higher. On the synthetic case the metric separates clean (1.60) from seamed
-(3.74), a 2.3x gap, and the test asserts that separation rather than a brittle
-absolute threshold on a synthetic baseline.
+**The regression was mine.** In the previous commit I replaced aligning every
+block against the first with a chain (block to previous block, shifts added
+up). In principle that keeps each step small and reliable. In practice a single
+failed correlation injected a large error that was never corrected, and after a
+few of those the object walked off the crop. Measured on the output: the bright
+bbox reached x=0, i.e. the Moon was cut by the left edge of the crop. The
+clamp I had put on each step allowed a quarter of the crop, which is far larger
+than any physical drift between two blocks.
 
-Honest note: my first attempt at this guard was useless. I wrote a
-correlation-against-a-reference-frame test, and both the correct and the broken
-stack scored 0.999, because a smooth disc survives a few pixels of drift. It
-would never have caught the bug. The replacement targets the actual failure
-signature.
+The merge now uses an **absolute anchor**: each block's object centre is
+measured by the detector, and the shift is the difference from the first
+block's centre. There is no accumulation, so there is nothing to accumulate
+wrong. It is also less code and less state. The bbox centre is pixel-accurate,
+which is ample: each block is already internally aligned sub-pixel, and the
+merge only has to place the blocks.
 
-22 tests pass.
+Adds `SkipReason::ObjectClipped`: a frame whose object touches a sensor edge is
+skipped, because part of it was never captured. Aligned onto the reference, its
+missing side shows as a straight cut in the stack. Measured on the session, a
+few percent of frames are affected.
+
+Tests: 23 pass, including a new one asserting clipping is detected at an edge
+and not on a centred object.

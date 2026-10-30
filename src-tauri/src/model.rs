@@ -338,6 +338,10 @@ pub enum SkipReason {
     Unreadable,
     /// Its cached TIFF no longer exists or is empty.
     MissingCache,
+    /// The object runs off the sensor edge on this frame: part of it was never
+    /// captured, so the frame cannot contribute to a common crop. Common on a
+    /// fixed tripod when the object drifts near the frame border.
+    ObjectClipped,
     /// Not enough usable frames to stack.
     NotEnoughFrames { found: usize, total: usize },
 }

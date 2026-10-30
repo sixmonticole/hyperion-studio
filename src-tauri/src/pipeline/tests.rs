@@ -852,3 +852,29 @@ fn seam_ratio(rgb: &[u16], w: usize, h: usize, tile: usize) -> f64 {
     let b = off_seam / n_off.max(1.0);
     a / b.max(1e-9)
 }
+
+/// Clipping detection: an object touching a sensor edge must be flagged, one
+/// sitting clear of every edge must not.
+#[test]
+fn clipping_is_detected_at_sensor_edges() {
+    use crate::pipeline::detect;
+
+    let (w, h) = (400, 300);
+
+    // Clear of every edge: not clipped.
+    let centred = synth_frame(w, h, 200.0, 150.0, 60.0, 200);
+    let d = detect::detect_planet(&centred, w, h, None).expect("detected");
+    let m = 8;
+    assert!(
+        d.bbox.0 > m && d.bbox.1 > m && d.bbox.2 + m < w && d.bbox.3 + m < h,
+        "a centred object must not read as clipped: {:?}",
+        d.bbox
+    );
+
+    // Pushed off the left edge: clipped.
+    let off_left = synth_frame(w, h, 10.0, 150.0, 60.0, 200);
+    let d = detect::detect_planet(&off_left, w, h, None).expect("detected");
+    let clipped =
+        d.bbox.0 <= m || d.bbox.1 <= m || d.bbox.2 + m >= w || d.bbox.3 + m >= h;
+    assert!(clipped, "an object at the left edge must read as clipped: {:?}", d.bbox);
+}

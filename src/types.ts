@@ -59,7 +59,11 @@ export type Stage =
   | "writingOutput";
 
 /// Why a frame was skipped. Serialized as a string or a tagged object.
-export type SkipReason = "unreadable" | "missingCache" | { notEnoughFrames: { found: number; total: number } };
+export type SkipReason =
+  | "unreadable"
+  | "missingCache"
+  | "objectClipped"
+  | { notEnoughFrames: { found: number; total: number } };
 
 /// A fatal pipeline error, identified by a code.
 export type JobError =

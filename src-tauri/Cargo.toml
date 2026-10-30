@@ -157,6 +157,16 @@ name = "diag_detect"
 path = "src/bin/diag_detect.rs"
 required-features = ["devtools"]
 
+[[bin]]
+name = "diag_voids"
+path = "src/bin/diag_voids.rs"
+required-features = ["devtools"]
+
+[[bin]]
+name = "diag_bbox"
+path = "src/bin/diag_bbox.rs"
+required-features = ["devtools"]
+
 [features]
 devtools = []
 

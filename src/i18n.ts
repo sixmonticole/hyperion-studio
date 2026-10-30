@@ -168,6 +168,7 @@ type Dict = {
   // --- Skip reasons ---
   "skip.unreadable": string;
   "skip.missingCache": string;
+  "skip.objectClipped": string;
   "skip.notEnough": string;
 
   // --- Fatal errors ---
@@ -343,6 +344,7 @@ const fr: Dict = {
 
   "skip.unreadable": "illisible",
   "skip.missingCache": "cache manquant",
+  "skip.objectClipped": "objet hors champ",
   "skip.notEnough": "trop peu de frames",
 
   "err.noRawFiles": "Aucun fichier RAW trouvé dans ce dossier.",
@@ -519,6 +521,7 @@ const en: Dict = {
 
   "skip.unreadable": "unreadable",
   "skip.missingCache": "missing cache",
+  "skip.objectClipped": "object out of frame",
   "skip.notEnough": "too few frames",
 
   "err.noRawFiles": "No RAW file found in this folder.",
@@ -605,7 +608,9 @@ export function stageText(t: Translate, stage: Stage): string {
 /// Maps a skip reason code to a localized sentence.
 export function skipText(t: Translate, reason: SkipReason): string {
   if (typeof reason === "string") {
-    return reason === "missingCache" ? t("skip.missingCache") : t("skip.unreadable");
+    if (reason === "missingCache") return t("skip.missingCache");
+    if (reason === "objectClipped") return t("skip.objectClipped");
+    return t("skip.unreadable");
   }
   if ("notEnoughFrames" in reason) {
     return t("skip.notEnough", {

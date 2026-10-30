@@ -427,8 +427,36 @@ pub fn run_pipeline(
 
             let score = match decode::read_rgb16_tiff(Path::new(&f.cache_path)) {
                 Ok((rgb, w, h)) => {
-                    let cropped = crop_rgb16(&rgb, w, h, &crop);
-                    Some(quality::score_frame(&cropped, crop_w, crop_h, tile))
+                    // Clipping: if the object runs off a sensor edge on this
+                    // frame, part of it was never captured. Such a frame cannot
+                    // contribute to a common crop: aligned onto the reference,
+                    // its missing side shows up as a straight cut in the stack.
+                    // On a fixed tripod the object drifts near the border, so
+                    // this happens on a small but real share of frames.
+                    let clipped = detect::detect_planet(&rgb, w, h, None)
+                        .map(|d| {
+                            const M: usize = 8;
+                            d.bbox.0 <= M
+                                || d.bbox.1 <= M
+                                || d.bbox.2 + M >= w
+                                || d.bbox.3 + M >= h
+                        })
+                        .unwrap_or(false);
+
+                    if clipped {
+                        progress(Progress::Warning {
+                            name: name.clone(),
+                            reason: SkipReason::ObjectClipped,
+                        });
+                        extra_skipped.lock().unwrap().push(SkippedFrame {
+                            name,
+                            reason: SkipReason::ObjectClipped,
+                        });
+                        None
+                    } else {
+                        let cropped = crop_rgb16(&rgb, w, h, &crop);
+                        Some(quality::score_frame(&cropped, crop_w, crop_h, tile))
+                    }
                 }
                 Err(_) => {
                     // The cached TIFF became unreadable: skip the frame rather
@@ -842,12 +870,10 @@ fn stack_blockwise(
     let total_for_progress = kept_count.max(1);
     let done_blocks = Mutex::new(0usize);
     let mut merge_acc = stack::Accumulator::new(crop_w, crop_h);
-    // Reference luminance for the mutual block alignment. Frozen after the
-    // first block, because that block is added unwarped and is therefore the
-    // reference the others are brought onto.
+    // The first block is added unwarped and is the reference the others are
+    // brought onto; its object centre is the anchor for every later block.
     let mut merge_ref: Option<Vec<f32>> = None;
-    // Accumulated shift that brings the current block onto the first one.
-    let mut cum: align::Shift = (0.0, 0.0);
+    let mut first_anchor: Option<align::Shift> = None;
 
     for chunk in order.chunks(block_size) {
         check_cancel(cancel)?;
@@ -863,6 +889,26 @@ fn stack_blockwise(
             .copied()
             .unwrap_or(chunk[0]);
         let (brgb, bw, bh) = decode::read_rgb16_tiff(Path::new(&best.cache_path))?;
+
+        // Absolute anchor for this block: where the object sits in the **full**
+        // frame, from the detector. This bounds the accumulation error: the
+        // correlation only has to supply the small residual on top of it.
+        //
+        // Without this, a single failed correlation injected a step that
+        // accumulated, and the object walked off the crop (its bright bbox
+        // reached x=0 and the Moon came out with a straight cut edge).
+        let anchor: align::Shift = match detect::detect_planet(&brgb, bw, bh, None) {
+            Some(d) => {
+                let cx = (d.bbox.0 as f64 + d.bbox.2 as f64) / 2.0 - crop.x as f64;
+                let cy = (d.bbox.1 as f64 + d.bbox.3 as f64) / 2.0 - crop.y as f64;
+                (cx, cy)
+            }
+            None => (f64::NAN, f64::NAN),
+        };
+        if anchor.0.is_finite() && first_anchor.is_none() {
+            first_anchor = Some(anchor);
+        }
+
         let bcrop = crop_rgb16(&brgb, bw, bh, crop);
         let ref_lum = align::luminance(&bcrop, pixels);
         let block_aligner = if settings.align {
@@ -884,48 +930,36 @@ fn stack_blockwise(
             None,
         )?;
 
-        // Bring it onto the origin reference, then merge and let it go.
+        // Bring the block onto the origin reference, then merge and let it go.
         //
-        // Blocks are aligned **in a chain**: each one is matched against the
-        // *previous* block, and the per-step shifts are accumulated. Matching
-        // every block directly against the first failed on this session: the
-        // Moon travels ~1800 px vertically over 993 frames, so by the last
-        // block the two images barely overlap and phase correlation picks a
-        // wrong peak (visible as ghosting). Chaining keeps each step small and
-        // reliable, which is what makes the accumulation meaningful.
+        // The shift is taken from the **detector**, not from a chain of
+        // correlations: each block's object centre is measured absolutely, and
+        // the shift is the difference from the first block's centre.
         //
-        // `cum` is the shift that brings the current block onto block 1. A
-        // block found at +100 px relative to the previous one, itself at
-        // +50 px, is at +150 px and must be warped by -150 px.
-        let is_first = merge_ref.is_none();
-        let step_shift: Option<align::Shift> = if is_first || !settings.align {
+        // This is what the chained approach got wrong. Matching block to block
+        // and accumulating the steps worked in principle, but a single failed
+        // correlation injected a large error that never got corrected, and
+        // after a few of those the object walked off the crop: its bright bbox
+        // reached x=0 and the Moon came out with a straight cut edge. An
+        // absolute anchor cannot accumulate error, because every block is
+        // measured independently.
+        //
+        // The bbox centre is pixel-accurate, which is ample here: the block's
+        // internal alignment already placed its frames sub-pixel relative to
+        // each other, and the merge only has to put the blocks in the right
+        // place.
+        let is_first = first_anchor.is_none() || merge_ref.is_none();
+        let total_shift: Option<align::Shift> = if is_first || anchor.0.is_finite() == false {
             None
         } else {
-            let rl = merge_ref.as_ref().expect("reference set above");
-            let merger = align::Aligner::new(rl, crop_w, crop_h);
-            let lum = align::luminance(&block, pixels);
-            Some(merger.estimate(&lum))
+            let f = first_anchor.expect("set on the first block");
+            Some((f.0 - anchor.0, f.1 - anchor.1))
         };
 
-        if is_first {
-            merge_ref = Some(align::luminance(&block, pixels));
-            cum = (0.0, 0.0);
-        } else if let Some(s) = step_shift {
-            // The reference luminance must follow the chain too, otherwise the
-            // next step compares against a frame that is two blocks back.
-            //
-            // Clamp the step: a single bad correlation would otherwise walk the
-            // accumulated shift off the frame and empty the stack. A block step
-            // beyond a quarter of the crop is not physical drift.
-            let limit = (crop_w.min(crop_h) as f64) * 0.25;
-            let (sx, sy) = (s.0.clamp(-limit, limit), s.1.clamp(-limit, limit));
-            cum.0 += sx;
-            cum.1 += sy;
+        if merge_ref.is_none() {
             merge_ref = Some(align::luminance(&block, pixels));
         }
 
-        // Warp by the accumulated shift to land on the origin reference.
-        let total_shift = if is_first { None } else { Some(cum) };
         let (aligned, mask) = match total_shift {
             Some(shift) => align::shift_rgb16_masked(&block, crop_w, crop_h, shift),
             None => (block, vec![1u8; pixels]),
