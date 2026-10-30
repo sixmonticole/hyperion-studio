@@ -123,15 +123,44 @@ pub fn total_memory() -> Option<u64> {
 
 /// Memory currently available for new allocations, in bytes.
 ///
-/// Approximated by free + inactive pages, which is what the system can hand out
-/// without further swapping. Deliberately conservative: it ignores purgeable
-/// and speculative pages. `None` if the platform call fails.
+/// macOS keeps almost no memory "free" by design: it fills RAM with file cache
+/// and reclaims on demand. Reading only `vm.page_free_count` therefore reports
+/// a misleadingly small number (often under 100 MB) and made the guard refuse
+/// perfectly safe runs.
+///
+/// We report what the kernel can hand out **without swapping**: free, inactive,
+/// speculative and purgeable pages. `None` if the platform call fails.
 pub fn available_memory() -> Option<u64> {
-    let page_size = sysctl_u64("hw.pagesize").unwrap_or(4096);
-    let free = sysctl_u64("vm.page_free_count")?;
-    let inactive = sysctl_u64("vm.page_inactive_count").unwrap_or(0);
-    // Keep a floor: never report less than a small working set.
-    Some((free + inactive).saturating_mul(page_size))
+    let page_size = sysctl_u64("hw.pagesize").unwrap_or(16384);
+
+    // `vm.page_inactive_count` is not exposed on modern macOS, so we go through
+    // the Mach host statistics, which is the documented way.
+    let mut stats: libc::vm_statistics64 = unsafe { std::mem::zeroed() };
+    let mut count = libc::HOST_VM_INFO64_COUNT;
+    // `mach_host_self` is marked deprecated in the libc crate in favour of the
+    // mach2 crate, but the call itself is correct and stable; pulling in a whole
+    // dependency for it is not worth it.
+    #[allow(deprecated)]
+    let host = unsafe { libc::mach_host_self() };
+    let rc = unsafe {
+        libc::host_statistics64(
+            host,
+            libc::HOST_VM_INFO64,
+            &mut stats as *mut _ as *mut libc::integer_t,
+            &mut count,
+        )
+    };
+    if rc != libc::KERN_SUCCESS {
+        // Fall back to the free-page sysctl, with a floor, rather than lying.
+        let free = sysctl_u64("vm.page_free_count").unwrap_or(0);
+        return Some(free.saturating_mul(page_size));
+    }
+
+    let reclaimable = stats.free_count as u64
+        + stats.inactive_count as u64
+        + stats.speculative_count as u64
+        + stats.purgeable_count as u64;
+    Some(reclaimable.saturating_mul(page_size))
 }
 
 /// Indicates whether a cached TIFF exists and is not empty. A zero-length file

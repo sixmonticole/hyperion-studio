@@ -142,6 +142,11 @@ name = "compare_1to1"
 path = "src/bin/compare_1to1.rs"
 required-features = ["devtools"]
 
+[[bin]]
+name = "diag_memory_info"
+path = "src/bin/diag_memory_info.rs"
+required-features = ["devtools"]
+
 [features]
 devtools = []
 

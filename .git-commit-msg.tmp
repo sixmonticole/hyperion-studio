@@ -1,27 +1,26 @@
-Subsample long folders at random before stacking
+Fix the available-memory reading and make the guard proportional
 
-A 993-frame session is not worth stacking whole. Noise falls as the square
-root of the frame count, so 993 identical frames gain about 2x over 200 while
-costing five times the disk (144 GB of cache) and the time. On a real session
-the difference is invisible: measured side by side at 1:1, the best and worst
-frames of a burst are indistinguishable, and the sharpness score that ranked
-them was mostly ranking sensor noise.
+The guard refused safe runs, reporting "71 MB available" on an 8 GB machine.
+Two bugs:
 
-New settings:
+1. `vm.page_inactive_count` is not exposed on modern macOS, so that term
+   silently fell back to zero and discarded the largest reclaimable chunk.
+2. Reading only `vm.page_free_count` is wrong by design: macOS keeps almost no
+   memory free, it fills RAM with file cache and reclaims on demand. A healthy
+   machine legitimately shows under 100 MB free.
 
-- `sample_enabled` (default on)
-- `sample_threshold` (default 100): above this many files, sample
-- `sample_count` (default 200): how many to keep
+The reading now goes through Mach `host_statistics64`, summing free, inactive,
+speculative and purgeable pages: the memory the kernel can hand out without
+swapping. Same machine now reports 3.0 GB instead of 71 MB.
 
-The draw is deterministic, seeded from the source path and the file count, so
-re-running a session selects the same frames and reuses the cache instead of
-building a different one. The sample is returned in capture order, because
-blockwise stacking needs consecutive groups. It is a partial Fisher-Yates
-shuffle over an index list: unbiased and O(n).
+The guard is also proportional instead of absolute:
 
-The pipeline emits a `Notice::Subsampled` event, which the UI shows in the
-info banner ("Folder of 993 frames: 200 chosen at random"), and the report
-records `sampled_from` so a small stack on a large folder is traceable.
+- **Block** only when the run exceeds **total physical memory**. That is the
+  case that rebooted the machine (6.7 GB of blocks on 8 GB); it cannot fit at
+  all and the swap storm is a real risk.
+- **Warn** when it exceeds what is free right now. Transient overshoot is what
+  swap is for: slower, not fatal. Blocking on it made the guard unusable, since
+  a run sized to fit in RAM would be refused as soon as a browser was open.
 
-Test: the draw is stable for a seed, returns the exact count, stays sorted,
-spreads across the whole folder, and changes with the seed.
+Adds `diag_memory_info`, which prints the three figures the guard uses so they
+can be checked against `vm_stat`.

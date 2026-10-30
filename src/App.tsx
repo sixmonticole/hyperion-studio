@@ -373,10 +373,15 @@ function App() {
     setTotal(scan?.count ?? 0);
 
     // --- Memory guard -------------------------------------------------------
-    // A run whose peak footprint exceeds available memory pushes macOS into
-    // swap, which starves the kernel watchdog and can reboot the machine. This
-    // was observed on a 900-frame session. Estimate first, then refuse rather
-    // than risk a reboot.
+    // A run that cannot fit in physical memory forces sustained heavy swap,
+    // which starves the kernel watchdog and can reboot the machine (observed on
+    // a 900-frame session: 6.7 GB of blocks on an 8 GB machine).
+    //
+    // The rule is proportional, not absolute:
+    // - **Block** when the run exceeds total physical memory: it cannot fit at
+    //   all, and the swap storm is a real reboot risk.
+    // - **Warn** when it exceeds what is currently free: macOS reclaims cache
+    //   and swaps happily for a transient overshoot, so this is not fatal.
     if (IN_TAURI) {
       try {
         const mem = await invoke<MemoryInfo>("memory_info");
@@ -390,14 +395,25 @@ function App() {
           cropPixels,
           blockSize: settings.blockSize,
         });
-        if (mem.available != null && need > mem.available) {
+
+        if (mem.total != null && need > mem.total) {
+          // Cannot fit in physical memory: refuse.
           setError(
             t("err.notEnoughMemory", {
+              need: formatBytes(need, lang),
+              free: formatBytes(mem.total, lang),
+            }),
+          );
+          return;
+        }
+        if (mem.available != null && need > mem.available) {
+          // Fits, but not in what is free right now: warn and carry on.
+          setCacheMsg(
+            t("warn.tightMemory", {
               need: formatBytes(need, lang),
               free: formatBytes(mem.available, lang),
             }),
           );
-          return;
         }
       } catch {
         // Guard is best-effort: a failure to measure must not block the run.

@@ -184,6 +184,7 @@ type Dict = {
   "err.sourceMissing": string;
   "err.jobRunning": string;
   "err.notEnoughMemory": string;
+  "warn.tightMemory": string;
   "notice.subsampled": string;
 };
 
@@ -356,7 +357,9 @@ const fr: Dict = {
   "err.sourceMissing": "Le stack source est introuvable.",
   "err.jobRunning": "Un traitement est déjà en cours.",
   "err.notEnoughMemory":
-    "Mémoire insuffisante : environ {need} requis, {free} disponible. Réduisez la taille du crop, fermez des applications, ou traitez moins de frames à la fois.",
+    "Traitement impossible sur cette machine : environ {need} requis, alors qu'elle n'a que {free} de mémoire physique. Réduisez la taille du crop ou le nombre de frames.",
+  "warn.tightMemory":
+    "Mémoire juste : environ {need} requis, {free} libre pour l'instant. Le système utilisera le swap : plus lent, mais sans danger. Fermez des applications pour accélérer.",
   "notice.subsampled":
     "Dossier de {total} frames : {kept} tirées au sort pour cet empilement.",
 };
@@ -530,7 +533,9 @@ const en: Dict = {
   "err.sourceMissing": "The source stack could not be found.",
   "err.jobRunning": "A job is already running.",
   "err.notEnoughMemory":
-    "Not enough memory: about {need} needed, {free} available. Reduce the crop size, close other applications, or process fewer frames at once.",
+    "This run cannot fit on this machine: about {need} needed, but it has only {free} of physical memory. Reduce the crop size or the frame count.",
+  "warn.tightMemory":
+    "Tight memory: about {need} needed, {free} free right now. The system will swap: slower, but safe. Close applications to speed it up.",
   "notice.subsampled":
     "Folder of {total} frames: {kept} chosen at random for this stack.",
 };
