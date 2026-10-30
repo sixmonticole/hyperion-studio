@@ -29,7 +29,7 @@ export interface ScanResult {
 }
 
 export interface Progress {
-  kind: "phase" | "import" | "analyze" | "stack" | "warning" | "finished" | "error";
+  kind: "phase" | "import" | "analyze" | "stack" | "warning" | "notice" | "finished" | "error";
   phase?: Phase;
   /// Stable stage code (translated on the frontend, never prose).
   stage?: Stage;
@@ -41,7 +41,12 @@ export interface Progress {
   report?: StackReport;
   /// Set for `kind: "error"`: a localized-able error code.
   error?: JobError;
+  /// Set for `kind: "notice"`: a non-fatal informational code.
+  notice?: Notice;
 }
+
+/// A non-fatal notice the UI surfaces to the user.
+export type Notice = { kind: "subsampled"; detail: { total: number; kept: number } };
 
 /// Stable stage codes emitted by the pipeline.
 export type Stage =
@@ -141,6 +146,9 @@ export interface Settings {
   blockSize: number;
   tileSelect: boolean;
   tileSize: number;
+  sampleEnabled: boolean;
+  sampleThreshold: number;
+  sampleCount: number;
   orientation: Orientation;
   enhance: EnhanceSettings;
 }
@@ -157,6 +165,9 @@ export const DEFAULT_SETTINGS: Settings = {
   blockSize: 10,
   tileSelect: true,
   tileSize: 64,
+  sampleEnabled: true,
+  sampleThreshold: 100,
+  sampleCount: 200,
   orientation: { rotate: 0, flipH: false, flipV: false },
   enhance: {
     enabled: false,

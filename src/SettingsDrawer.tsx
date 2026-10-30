@@ -167,6 +167,44 @@ export function SettingsDrawer({
             )}
           </div>
 
+          {/* --- Random subsampling --- */}
+          <div className="block">
+            <span className="group-title">{t("set.sample")}</span>
+            <p className="blk-desc">{t("set.sampleDesc")}</p>
+            <div className="toggle" style={{ marginTop: 10 }}>
+              <Toggle
+                checked={settings.sampleEnabled}
+                onChange={(v) => set("sampleEnabled", v)}
+                label={t("set.sampleOn")}
+              />
+            </div>
+            {settings.sampleEnabled && (
+              <div className="sliders" style={{ marginTop: 12 }}>
+                <Slider
+                  label={t("set.sampleThreshold")}
+                  value={settings.sampleThreshold}
+                  min={20}
+                  max={1000}
+                  step={10}
+                  format={(v) => `${Math.round(v)} ${t("run.frames")}`}
+                  onChange={(v) => set("sampleThreshold", Math.round(v))}
+                />
+                <Slider
+                  label={t("set.sampleCount")}
+                  value={settings.sampleCount}
+                  min={20}
+                  max={1000}
+                  step={10}
+                  format={(v) => `${Math.round(v)} ${t("run.frames")}`}
+                  onChange={(v) => set("sampleCount", Math.round(v))}
+                />
+                <p className="note">
+                  <Icon name="alert" size={12} /> {t("set.sampleNote")}
+                </p>
+              </div>
+            )}
+          </div>
+
           {/* --- Enhancement --- */}
           <div className="block">
             <span className="group-title">{t("set.enhance")}</span>

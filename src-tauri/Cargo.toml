@@ -132,6 +132,16 @@ name = "diag_memory_synth"
 path = "src/bin/diag_memory_synth.rs"
 required-features = ["devtools"]
 
+[[bin]]
+name = "rank_raw"
+path = "src/bin/rank_raw.rs"
+required-features = ["devtools"]
+
+[[bin]]
+name = "compare_1to1"
+path = "src/bin/compare_1to1.rs"
+required-features = ["devtools"]
+
 [features]
 devtools = []
 

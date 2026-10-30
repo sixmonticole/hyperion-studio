@@ -16,7 +16,8 @@ pub mod stack;
 mod tests;
 
 use crate::model::{
-    CropRect, FrameInfo, Phase, Progress, Settings, SkipReason, SkippedFrame, StackReport, Stage,
+    CropRect, FrameInfo, Notice, Phase, Progress, Settings, SkipReason, SkippedFrame, StackReport,
+    Stage,
 };
 use anyhow::{Result, bail};
 use rayon::prelude::*;
@@ -130,6 +131,59 @@ fn check_cancel(cancel: &AtomicBool) -> Result<()> {
     Ok(())
 }
 
+/// FNV-1a hash, used to derive a stable seed from a folder path. Stable across
+/// runs and platforms, unlike `DefaultHasher`.
+fn fnv1a(bytes: &[u8]) -> u64 {
+    let mut h: u64 = 0xcbf29ce484222325;
+    for &b in bytes {
+        h ^= b as u64;
+        h = h.wrapping_mul(0x100000001b3);
+    }
+    h
+}
+
+/// Picks `want` items out of `items`, deterministically for a given `seed`.
+///
+/// A partial Fisher-Yates shuffle over an index list: unbiased, O(n), and it
+/// touches only the first `want` positions. The result is **sorted**, so the
+/// frames stay in capture order (blockwise stacking needs consecutive groups).
+fn deterministic_sample<T>(items: Vec<T>, want: usize, seed: u64) -> Vec<T> {
+    let n = items.len();
+    let want = want.min(n);
+    if want == 0 {
+        return Vec::new();
+    }
+
+    let mut idx: Vec<usize> = (0..n).collect();
+    // xorshift64*, seeded from the stable hash.
+    let mut state = seed | 1;
+    let mut next = || {
+        state ^= state >> 12;
+        state ^= state << 25;
+        state ^= state >> 27;
+        state.wrapping_mul(0x2545F4914F6CDD1D)
+    };
+
+    for i in 0..want {
+        let j = i + (next() as usize % (n - i));
+        idx.swap(i, j);
+    }
+    idx.truncate(want);
+    idx.sort_unstable();
+
+    // Move the selected items out, in order.
+    let mut out: Vec<T> = Vec::with_capacity(want);
+    let mut it = items.into_iter().enumerate();
+    let mut pick = idx.iter().peekable();
+    while let (Some((i, item)), Some(&&target)) = (it.next(), pick.peek()) {
+        if i == target {
+            out.push(item);
+            pick.next();
+        }
+    }
+    out
+}
+
 /// Point d'entree : traite un dossier complet et renvoie le rapport final.
 ///
 /// `progress` est appele depuis plusieurs threads ; il doit etre thread-safe
@@ -149,10 +203,40 @@ pub fn run_pipeline(
         stage: Stage::ScanningFiles,
     });
 
-    let raw_files = decode::list_raw_files(source_dir)?;
+    let mut raw_files = decode::list_raw_files(source_dir)?;
     if raw_files.is_empty() {
         bail!("no RAW file found in {}", source_dir.display());
     }
+    let total_all = raw_files.len();
+
+    // --- Random subsampling ------------------------------------------------
+    //
+    // Stacking 900 identical frames gains almost nothing over 200 (noise falls
+    // as the square root of the count) but costs five times the disk and the
+    // time. Above `sample_threshold` files we stack a random subset instead.
+    //
+    // The draw is **deterministic** for a given folder: seeded from the source
+    // path and the file count, so running the same session again selects the
+    // same frames and reuses the cache rather than rebuilding a different one.
+    let mut sampled = false;
+    if settings.sample_enabled
+        && settings.sample_threshold > 0
+        && total_all > settings.sample_threshold
+        && settings.sample_count > 0
+        && settings.sample_count < total_all
+    {
+        let want = settings.sample_count;
+        let seed = fnv1a(source_dir.to_string_lossy().as_bytes()) ^ (total_all as u64);
+        raw_files = deterministic_sample(raw_files, want, seed);
+        sampled = true;
+        progress(Progress::Notice {
+            notice: Notice::Subsampled {
+                total: total_all,
+                kept: want,
+            },
+        });
+    }
+
     let total = raw_files.len();
     std::fs::create_dir_all(cache_dir)?;
 
@@ -629,6 +713,7 @@ pub fn run_pipeline(
         raw_output_path: raw_path.as_ref().map(|p| p.to_string_lossy().to_string()),
         total_frames: total,
         kept_frames: kept_count,
+        sampled_from: if sampled { Some(total_all) } else { None },
         mean_quality,
         crop,
         settings: settings.clone(),

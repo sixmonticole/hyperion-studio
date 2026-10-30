@@ -186,6 +186,18 @@ pub struct Settings {
     pub tile_select: bool,
     /// Taille d'une tuile de selection (cote, en pixels). Defaut 64.
     pub tile_size: usize,
+    /// Echantillonnage aleatoire : au-dela de `sample_threshold` fichiers,
+    /// n'en empiler qu'un sous-ensemble tire au sort.
+    ///
+    /// Empiler 900 poses identiques ne gagne presque rien face a 200 (le bruit
+    /// ne tombe qu'en racine du nombre) mais coute 5 fois le disque et le
+    /// temps. Le tirage est **deterministe** pour un dossier donne : relancer
+    /// la meme session reutilise le meme cache.
+    pub sample_enabled: bool,
+    /// Nombre de fichiers a partir duquel on echantillonne. Defaut 100.
+    pub sample_threshold: usize,
+    /// Nombre de frames a conserver quand on echantillonne. Defaut 200.
+    pub sample_count: usize,
     /// Orientation appliquee a l'image finale.
     pub orientation: Orientation,
     /// Post-traitement de l'image finale (ondelettes, niveaux, CLAHE, clarte).
@@ -206,6 +218,9 @@ impl Default for Settings {
             block_size: 10,
             tile_select: true,
             tile_size: 64,
+            sample_enabled: true,
+            sample_threshold: 100,
+            sample_count: 200,
             orientation: Orientation::default(),
             enhance: EnhanceSettings::default(),
         }
@@ -223,6 +238,11 @@ pub struct StackReport {
     pub raw_output_path: Option<String>,
     pub total_frames: usize,
     pub kept_frames: usize,
+    /// Number of files found in the folder before random subsampling. `None`
+    /// when every file was used. Lets the report explain a small stack on a
+    /// large folder.
+    #[serde(default)]
+    pub sampled_from: Option<usize>,
     pub mean_quality: f64,
     pub crop: CropRect,
     pub settings: Settings,
@@ -272,10 +292,20 @@ pub enum Progress {
     /// Une frame a ete ecartee (illisible, corrompue...). Non fatal.
     /// `reason` est un code, pas une phrase.
     Warning { name: String, reason: SkipReason },
+    /// Information non fatale sur le deroulement (ex. sous-echantillonnage).
+    Notice { notice: Notice },
     /// Termine avec le rapport final.
     Finished { report: Box<StackReport> },
     /// Erreur fatale, identifiee par un code.
     Error { error: JobError },
+}
+
+/// A non-fatal notice the UI may surface to the user. A code, not a sentence.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase", tag = "kind", content = "detail")]
+pub enum Notice {
+    /// Only `kept` frames were stacked out of `total`, chosen at random.
+    Subsampled { total: usize, kept: usize },
 }
 
 /// Stable, translatable stage codes emitted by the pipeline. The frontend maps

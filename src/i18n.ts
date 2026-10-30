@@ -121,6 +121,12 @@ type Dict = {
   "set.tileSelect": string;
   "set.tileSelectDesc": string;
   "set.tileSize": string;
+  "set.sample": string;
+  "set.sampleDesc": string;
+  "set.sampleOn": string;
+  "set.sampleThreshold": string;
+  "set.sampleCount": string;
+  "set.sampleNote": string;
   "set.enhance": string;
   "set.enhanceOn": string;
   "set.enhanceDesc": string;
@@ -178,6 +184,7 @@ type Dict = {
   "err.sourceMissing": string;
   "err.jobRunning": string;
   "err.notEnoughMemory": string;
+  "notice.subsampled": string;
 };
 
 const fr: Dict = {
@@ -286,6 +293,15 @@ const fr: Dict = {
   "set.tileSelectDesc":
     "Tire chaque région de l'image des frames qui y sont nettes, au lieu du seul tri global. Meilleur au terminateur et sur le limbe.",
   "set.tileSize": "Taille des zones",
+
+  "set.sample": "Échantillonnage",
+  "set.sampleDesc":
+    "Au-delà du seuil, n'empiler qu'un sous-ensemble tiré au sort. Utile pour les longues sessions : 900 poses identiques n'apportent presque rien de plus que 200, pour cinq fois le disque et le temps.",
+  "set.sampleOn": "Échantillonner les longs dossiers",
+  "set.sampleThreshold": "À partir de",
+  "set.sampleCount": "Frames conservées",
+  "set.sampleNote":
+    "Le tirage est déterministe : relancer la même session réutilise le même cache.",
   "set.enhance": "Amélioration",
   "set.enhanceOn": "Activer le post-traitement",
   "set.enhanceDesc": "Sans effet sur le TIFF brut si désactivé.",
@@ -341,6 +357,8 @@ const fr: Dict = {
   "err.jobRunning": "Un traitement est déjà en cours.",
   "err.notEnoughMemory":
     "Mémoire insuffisante : environ {need} requis, {free} disponible. Réduisez la taille du crop, fermez des applications, ou traitez moins de frames à la fois.",
+  "notice.subsampled":
+    "Dossier de {total} frames : {kept} tirées au sort pour cet empilement.",
 };
 
 const en: Dict = {
@@ -449,6 +467,15 @@ const en: Dict = {
   "set.tileSelectDesc":
     "Draws each region of the image from the frames that are sharp there, instead of a single global ranking. Better at the terminator and the limb.",
   "set.tileSize": "Region size",
+
+  "set.sample": "Subsampling",
+  "set.sampleDesc":
+    "Above the threshold, stack only a randomly chosen subset. Useful for long sessions: 900 identical frames gain almost nothing over 200, for five times the disk and time.",
+  "set.sampleOn": "Subsample long folders",
+  "set.sampleThreshold": "Starting from",
+  "set.sampleCount": "Frames kept",
+  "set.sampleNote":
+    "The draw is deterministic: running the same session again reuses the same cache.",
   "set.enhance": "Enhancement",
   "set.enhanceOn": "Enable post-processing",
   "set.enhanceDesc": "No effect on the raw TIFF when off.",
@@ -504,6 +531,8 @@ const en: Dict = {
   "err.jobRunning": "A job is already running.",
   "err.notEnoughMemory":
     "Not enough memory: about {need} needed, {free} available. Reduce the crop size, close other applications, or process fewer frames at once.",
+  "notice.subsampled":
+    "Folder of {total} frames: {kept} chosen at random for this stack.",
 };
 
 const DICTS: Record<Lang, Dict> = { fr, en };

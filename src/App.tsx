@@ -248,6 +248,9 @@ function App() {
         const name = p.name;
         const reason = p.reason ?? "unreadable";
         setWarnings((w) => [...w, { name, reason }]);
+      } else if (p.kind === "notice" && p.notice?.kind === "subsampled") {
+        const { total, kept } = p.notice.detail;
+        setCacheMsg(t("notice.subsampled", { total, kept }));
       } else if (p.kind === "finished" && p.report) {
         setReport(p.report);
         setPhase("done");

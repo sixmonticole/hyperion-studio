@@ -1,0 +1,27 @@
+Subsample long folders at random before stacking
+
+A 993-frame session is not worth stacking whole. Noise falls as the square
+root of the frame count, so 993 identical frames gain about 2x over 200 while
+costing five times the disk (144 GB of cache) and the time. On a real session
+the difference is invisible: measured side by side at 1:1, the best and worst
+frames of a burst are indistinguishable, and the sharpness score that ranked
+them was mostly ranking sensor noise.
+
+New settings:
+
+- `sample_enabled` (default on)
+- `sample_threshold` (default 100): above this many files, sample
+- `sample_count` (default 200): how many to keep
+
+The draw is deterministic, seeded from the source path and the file count, so
+re-running a session selects the same frames and reuses the cache instead of
+building a different one. The sample is returned in capture order, because
+blockwise stacking needs consecutive groups. It is a partial Fisher-Yates
+shuffle over an index list: unbiased and O(n).
+
+The pipeline emits a `Notice::Subsampled` event, which the UI shows in the
+info banner ("Folder of 993 frames: 200 chosen at random"), and the report
+records `sampled_from` so a small stack on a large folder is traceable.
+
+Test: the draw is stable for a seed, returns the exact count, stays sorted,
+spreads across the whole folder, and changes with the seed.

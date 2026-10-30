@@ -718,3 +718,40 @@ fn peak_memory_is_constant_in_frame_count() {
         "peak estimate should be a conservative 2-4 GB for a 3620x3620 crop, got {mb} MB"
     );
 }
+
+// --- Random subsampling ------------------------------------------------------
+
+/// Subsampling must be deterministic for a given seed, return exactly the
+/// requested count, keep capture order, and actually spread over the range.
+#[test]
+fn subsampling_is_deterministic_sorted_and_spread() {
+    let items: Vec<usize> = (0..1000).collect();
+    let seed = 0xABCDEF_u64;
+
+    let a = crate::pipeline::deterministic_sample(items.clone(), 200, seed);
+    let b = crate::pipeline::deterministic_sample(items.clone(), 200, seed);
+    assert_eq!(a, b, "same seed must give the same sample");
+    assert_eq!(a.len(), 200, "must return exactly the requested count");
+
+    // Sorted, so blockwise stacking still sees consecutive groups.
+    assert!(
+        a.windows(2).all(|w| w[0] < w[1]),
+        "sample must stay in capture order"
+    );
+
+    // Spread: the sample must reach both halves of the folder, not cluster.
+    let min = *a.first().unwrap();
+    let max = *a.last().unwrap();
+    assert!(min < 150, "sample should include early frames, got min {min}");
+    assert!(max > 850, "sample should include late frames, got max {max}");
+
+    // A different seed must give a different draw.
+    let c = crate::pipeline::deterministic_sample(items.clone(), 200, seed ^ 12345);
+    assert_ne!(a, c, "a different seed must give a different sample");
+
+    // Asking for everything (or more) returns everything, in order.
+    let all = crate::pipeline::deterministic_sample(items.clone(), 1000, seed);
+    assert_eq!(all, items);
+    let over = crate::pipeline::deterministic_sample(items.clone(), 5000, seed);
+    assert_eq!(over, items);
+}
